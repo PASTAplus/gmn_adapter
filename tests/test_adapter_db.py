@@ -12,4 +12,14 @@ Author:
 Created:
     2025-12-16
 """
+
+import daiquiri
 import pytest
+
+from gmn_adapter.config import Config
+
+
+logger = daiquiri.getLogger(__name__)
+
+print(Config.QUEUE)
+pass
