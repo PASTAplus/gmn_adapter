@@ -16,10 +16,14 @@ Created:
 import daiquiri
 import pytest
 
-from gmn_adapter.config import Config
-
 
 logger = daiquiri.getLogger(__name__)
 
-print(Config.QUEUE)
-pass
+
+def test_new_queue_manager(queue_manager):
+    assert queue_manager is not None
+
+
+def test_queue_manager_count(queue_manager):
+    count = queue_manager.get_count()
+    assert count == 530
