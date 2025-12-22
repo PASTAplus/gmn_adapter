@@ -13,6 +13,8 @@ Created:
     2025-12-16
 """
 import csv
+from datetime import datetime
+
 import pytest
 from sqlalchemy import insert
 
@@ -22,10 +24,16 @@ from gmn_adapter.db.adapter_db import Queue, QueueManager
 
 @pytest.fixture(scope="session")
 def queue_manager():
-    data = Config.ROOT_DIR / "tests" / "data" / "adapter_queue.csv"
-    with open(data, "r") as f:
+    data_path = Config.ROOT_DIR / "tests" / "data" / "adapter_queue.csv"
+    data = []
+    with open(data_path, "r") as f:
         reader = csv.DictReader(f)
-        data = [row for row in reader]
+        for row in reader:
+            row["identifier"] = int(row["identifier"])
+            row["revision"] = int(row["revision"])
+            row["datetime"] = datetime.fromisoformat(row["datetime"])
+            row["dequeued"] = bool(int(row["dequeued"]))
+            data.append(row)
 
     qm = QueueManager(":memory:")
     stmt = insert(Queue).values(data)
