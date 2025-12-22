@@ -1,6 +1,7 @@
 # gmn_adapter
 .idea
 config.py
+*.sqlite
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
