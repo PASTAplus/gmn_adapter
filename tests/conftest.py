@@ -24,6 +24,8 @@ from gmn_adapter.db.adapter_db import Queue, QueueManager
 
 @pytest.fixture(scope="session")
 def queue_manager():
+    '''Load data package manager queue data from CSV into a memory-based SQLite database.'''
+
     data_path = Config.ROOT_DIR / "tests" / "data" / "adapter_queue.csv"
     data = []
     with open(data_path, "r") as f:
