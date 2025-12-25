@@ -93,7 +93,7 @@ class QueueManager(object):
             self.session.commit()
         except NoResultFound as e:
             p = package
-            logger.error("{e} - {p}".format(e=e, p=p))
+            logger.error(f"{e} - {p}")
 
     def enqueue(self, event=None):
         """Insert a PASTA event into the adapter queue.
@@ -149,7 +149,7 @@ class QueueManager(object):
             )
         except NoResultFound as e:
             p = package
-            logger.error("{e} - {p}".format(e=e, p=p))
+            logger.error(f"{e} - {p}")
 
     def get_head(self):
         """Return the first not-yet-dequeued event record.
@@ -220,7 +220,7 @@ class QueueManager(object):
             dequeued = event.dequeued
         except NoResultFound as e:
             p = package
-            logger.error("{e} - {p}".format(e=e, p=p))
+            logger.error(f"{e} - {p}")
         return dequeued
 
 
