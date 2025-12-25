@@ -62,14 +62,18 @@ class QueueManager(object):
         """
         self.queue = queue
         db = "sqlite+pysqlite:///" + self.queue
-        engine = create_engine(db)
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
+        self.engine = create_engine(db)
+        Base.metadata.create_all(self.engine)
+        Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-    def delete_queue(self):
+    def delete_queue(self) -> None:
         """Remove the SQLite database file from the filesystem."""
-        os.remove(self.queue)
+        self.session.close_all()
+        Base.metadata.drop_all(self.engine)
+        self.engine.dispose()
+        if self.queue != ":memory:":
+            Path(self.queue).unlink()
 
     def dequeue(self, package=None, method=None):
         """Mark a queued PASTA event as dequeued.
