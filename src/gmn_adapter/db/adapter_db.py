@@ -32,7 +32,6 @@ from gmn_adapter.config import Config
 
 
 logger = daiquiri.getLogger(__name__)
-
 Base = declarative_base()
 
 
