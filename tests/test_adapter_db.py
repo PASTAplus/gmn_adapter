@@ -30,12 +30,6 @@ def test_new_queue_manager(queue_manager):
     assert queue_manager is not None
 
 
-def test_count(queue_manager):
-    """Test that the queue count is correct."""
-    count = queue_manager.get_count()
-    assert count == 530
-
-
 def test_delete_queue(queue_manager):
     """Test that the SQLite database file can be deleted.
 
@@ -45,6 +39,47 @@ def test_delete_queue(queue_manager):
     """
     file_db = Config.ROOT_DIR / "tests" / "data" / "adapter_queue.sqlite"
     su.sqlite_memory_to_file(queue_manager.engine, str(file_db))
+    assert file_db.exists()
     qm = QueueManager(str(file_db))
     qm.delete_queue()
     assert not file_db.exists()
+
+
+def test_dequeue(queue_manager):
+    pass
+
+
+def test_enqueue(queue_manager):
+    pass
+
+
+def test_get_count(queue_manager):
+    """Test that the queue count is correct.
+
+    The test queue contains 530 records.
+    """
+    count = queue_manager.get_count()
+    assert count == 530
+
+
+def test_get_event(queue_manager):
+    pass
+
+
+def test_get_head(queue_manager):
+    pass
+
+
+def test_get_last_datetime(queue_manager):
+    pass
+
+
+def  test_get_predecessor(queue_manager):
+    pass
+
+
+def test_is_dequeued(queue_manager):
+    pass
+
+
+
