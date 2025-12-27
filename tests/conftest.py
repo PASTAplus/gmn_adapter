@@ -19,12 +19,13 @@ import pytest
 from sqlalchemy import insert
 
 from gmn_adapter.config import Config
-from gmn_adapter.db.adapter_db import Queue, QueueManager
+from gmn_adapter.model.adapter_db import Queue, QueueManager
+from gmn_adapter.model.event import Event
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def queue_manager():
-    '''Load data package manager queue data from CSV into a memory-based SQLite database.'''
+    """Load data package manager queue data from CSV into a memory-based SQLite database."""
 
     data_path = Config.ROOT_DIR / "tests" / "data" / "adapter_queue.csv"
     data = []
@@ -42,4 +43,23 @@ def queue_manager():
     qm.session.execute(stmt)
     qm.session.commit()
 
-    yield qm
+    return qm
+
+
+@pytest.fixture(scope="session")
+def event():
+    """Create a test event for use in tests."""
+
+    PACKAGE = "knb-lter-nin.1.1"
+    TIMESTAMP = datetime.fromisoformat("2025-12-26 12:34:56.2345")
+    METHOD = "create"
+    OWNER = "EDI-166ebf44ac70835c7ebce152e2219ae5eab16418"
+    DOI = "doi:10.6073/pasta/0675d3602ff57f24838ca8d14d7f3961"
+
+    return Event(
+        package=PACKAGE,
+        timestamp=TIMESTAMP,
+        method=METHOD,
+        owner=OWNER,
+        doi=DOI,
+    )
