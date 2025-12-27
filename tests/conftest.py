@@ -14,6 +14,7 @@ Created:
 """
 import csv
 from datetime import datetime
+from datetime import timezone
 
 import pytest
 from sqlalchemy import insert
@@ -51,7 +52,7 @@ def event():
     """Create a test event for use in tests."""
 
     PACKAGE = "knb-lter-nin.1.1"
-    TIMESTAMP = datetime.fromisoformat("2025-12-26 12:34:56.2345")
+    TIMESTAMP = datetime.now(timezone.utc)
     METHOD = "create"
     OWNER = "EDI-166ebf44ac70835c7ebce152e2219ae5eab16418"
     DOI = "doi:10.6073/pasta/0675d3602ff57f24838ca8d14d7f3961"
