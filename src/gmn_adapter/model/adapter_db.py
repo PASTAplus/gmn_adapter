@@ -16,17 +16,19 @@ Author:
 Date:
     2025-12-14
 """
+from datetime import datetime
 from pathlib import Path
 
 import daiquiri
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy import desc
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.query import Query
 
 from gmn_adapter.config import Config
 
@@ -58,7 +60,7 @@ class QueueManager(object):
         """Initialize a queue manager backed by an SQLite database.
 
         Args:
-            queue: Path to the SQLite database file for the queue.
+            queue: Path to the SQLite database file or :memory: for the queue.
         """
         self.queue = queue
         db = "sqlite+pysqlite:///" + self.queue
@@ -67,7 +69,7 @@ class QueueManager(object):
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-    def delete_queue(self) -> None:
+    def delete_queue(self):
         """Remove the SQLite database file from the filesystem."""
         self.session.close_all()
         Base.metadata.drop_all(self.engine)
@@ -75,33 +77,28 @@ class QueueManager(object):
         if self.queue != ":memory:":
             Path(self.queue).unlink()
 
-    def dequeue(self, package=None, method=None):
-        """Mark a queued PASTA event as dequeued.
+    def dequeue(self, package):
+        """Mark an event as dequeued.
 
         Args:
             package: The PASTA data package identifier (e.g., "scope.id.rev").
-            method: The PASTA event method type.
 
         Returns:
             None
         """
-        try:
-            event = (
-                self.session.query(Queue)
-                .filter(Queue.package == package, Queue.method == method)
-                .one()
-            )
-            event.dequeued = True
-            self.session.commit()
-        except NoResultFound as e:
-            p = package
-            logger.error(f"{e} - {p}")
+        event = (
+            self.session.query(Queue)
+            .filter(Queue.package == package)
+            .one()
+        )
+        event.dequeued = True
+        self.session.commit()
 
     def enqueue(self, event=None):
         """Insert a PASTA event into the adapter queue.
 
         Args:
-            event: Instance of the utility `Event` class.
+            event: Instance of the model `Event` class.
 
         Returns:
             None
@@ -125,7 +122,7 @@ class QueueManager(object):
             logger.error(e)
             self.session.rollback()
 
-    def get_count(self):
+    def get_count(self) -> int:
         """Return the number of records in the adapter queue.
 
         Returns:
@@ -133,31 +130,26 @@ class QueueManager(object):
         """
         return self.session.query(func.count(Queue.package)).scalar()
 
-    def get_event(self, package=None, method=None):
-        """Return the queue event record for a given package and method.
+    def get_event(self, package=None) -> type[Queue]:
+        """Return the queue event record for a given package identifier.
 
         Args:
             package: The PASTA data package identifier (e.g., "scope.id.rev").
-            method: The PASTA event method type.
 
         Returns:
-            Queue | None: The matching queue event record, or `None` if not found.
+            Query | None: The matching queue event record, or `None` if not found.
         """
-        try:
-            return (
-                self.session.query(Queue)
-                .filter(Queue.package == package, Queue.method == method)
-                .one()
-            )
-        except NoResultFound as e:
-            p = package
-            logger.error(f"{e} - {p}")
+        return (
+            self.session.query(Queue)
+            .filter(Queue.package == package)
+            .one()
+        )
 
-    def get_head(self):
+    def get_head(self) -> type[Queue]:
         """Return the first not-yet-dequeued event record.
 
         Returns:
-            Queue | None: Oldest non-dequeued event record, or `None` if none exist.
+            Query: Oldest non-dequeued event record.
         """
         return (
             self.session.query(Queue)
@@ -166,19 +158,18 @@ class QueueManager(object):
             .first()
         )
 
-    def get_last_datetime(self):
+    def get_last_datetime(self) -> datetime:
         """Return the datetime of the most recent queue entry.
 
         Returns:
-            datetime.datetime | None: Datetime of the last queue entry, or `None` if empty.
+            datetime.datetime: Datetime of the last queue entry, or `None` if empty.
         """
-        datetime = None
-        event = self.session.query(Queue).order_by(desc(Queue.datetime)).first()
-        if event is not None:
-            datetime = event.datetime
-        return datetime
+        return (self.session.query(Queue)
+                 .order_by(desc(Queue.datetime))
+                 .first()
+                 .datetime)
 
-    def get_predecessor(self, package=None):
+    def get_predecessor(self, package) -> type[Queue] | None:
         """Return the most recent predecessor for a given package.
 
         A predecessor is an event with the same scope and identifier, but a lower
@@ -190,7 +181,10 @@ class QueueManager(object):
         Returns:
             Queue | None: The predecessor event record, or `None` if none found.
         """
-        scope, identifier, revision = package.split(".")
+        scope, _identifier, _revision = package.split(".")
+        identifier = int(_identifier)
+        revision = int(_revision)
+
         return (
             self.session.query(Queue)
             .filter(
@@ -202,38 +196,20 @@ class QueueManager(object):
             .first()
         )
 
-    def is_dequeued(self, package=None, method=None):
+    def is_dequeued(self, package) -> bool:
         """Return whether the specified package/method has been dequeued.
 
         Args:
             package: The PASTA data package identifier (e.g., "scope.id.rev").
-            method: The PASTA event method type.
 
         Returns:
             bool | None: Dequeued status, or `None` if the record is not found.
         """
-        dequeued = None
-        try:
-            event = (
-                self.session.query(Queue)
-                .filter(Queue.package == package, Queue.method == method)
-                .one()
-            )
-            dequeued = event.dequeued
-        except NoResultFound as e:
-            p = package
-            logger.error(f"{e} - {p}")
-        return dequeued
+        event = (
+            self.session.query(Queue)
+            .filter(Queue.package == package)
+            .one()
+        )
 
+        return bool(event.dequeued)
 
-def main():
-    """Program entry point.
-
-    Returns:
-        int: Process exit code.
-    """
-    return 0
-
-
-if __name__ == "__main__":
-    main()
