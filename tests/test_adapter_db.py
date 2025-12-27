@@ -27,7 +27,7 @@ import utils.sqlite_utils as su
 
 logger = daiquiri.getLogger(__name__)
 
-# Constants derived from adapter_queue.csv
+# Constants derived from tests/data/adapter_queue.csv
 QUEUE_COUNT = 530
 HEAD_PID = "knb-lter-fce.1084.11"
 LAST_DATETIME = datetime(2023, 6, 15, 19, 2, 38, 596000)
@@ -50,8 +50,9 @@ def test_delete_queue(queue_manager):
     """Test that the SQLite database file can be deleted.
 
     Because the QueueManager class uses an in-memory SQLite database by default,
-    we need to create a file-based database for testing purposes. We then delete
-    the file-based database and verify that it no longer exists.
+    we need to create a file-based database from the in-memory database for
+    testing purposes. We then delete the file-based database and verify that
+    it no longer exists.
     """
     file_db = Config.ROOT_DIR / "tests" / "data" / "adapter_queue.sqlite"
     su.sqlite_memory_to_file(queue_manager.engine, str(file_db))
@@ -62,7 +63,9 @@ def test_delete_queue(queue_manager):
 
 
 def test_enqueue(queue_manager, event):
-    pass
+    queue_manager.enqueue(event)
+    last_event = queue_manager.get_last_event()
+    assert last_event.package == event.package
 
 
 def test_get_count(queue_manager):
