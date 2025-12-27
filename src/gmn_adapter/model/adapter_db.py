@@ -60,7 +60,7 @@ class QueueManager(object):
         """Initialize a queue manager backed by an SQLite database.
 
         Args:
-            queue: Path to the SQLite database file or :memory: for the queue.
+            queue: Path to the SQLite database file or ":memory:" for in-memory database.
         """
         self.queue = queue
         db = "sqlite+pysqlite:///" + self.queue
@@ -80,11 +80,16 @@ class QueueManager(object):
     def dequeue(self, package):
         """Mark an event as dequeued.
 
+        This method is idempotent.
+
         Args:
             package: The PASTA data package identifier (e.g., "scope.id.rev").
 
         Returns:
             None
+
+        Raises:
+            sqlalchemy.orm.exc.NoResultFound: If the package is not found in the queue.
         """
         event = (
             self.session.query(Queue)
@@ -111,7 +116,7 @@ class QueueManager(object):
             identifier=identifier,
             revision=revision,
             method=event.method,
-            datetime=event.datetime,
+            datetime=event.timestamp,
             owner=event.owner,
             doi=event.doi,
         )
@@ -121,6 +126,7 @@ class QueueManager(object):
         except IntegrityError as e:
             logger.error(e)
             self.session.rollback()
+            raise e
 
     def get_count(self) -> int:
         """Return the number of records in the adapter queue.
@@ -137,7 +143,10 @@ class QueueManager(object):
             package: The PASTA data package identifier (e.g., "scope.id.rev").
 
         Returns:
-            Query | None: The matching queue event record, or `None` if not found.
+            Query: The matching queue event record.
+
+        Raises:
+            sqlalchemy.orm.exc.NoResultFound: If the package is not found in the queue.
         """
         return (
             self.session.query(Queue)
@@ -168,6 +177,16 @@ class QueueManager(object):
                  .order_by(desc(Queue.datetime))
                  .first()
                  .datetime)
+
+    def get_last_event(self) -> type[Queue] | None:
+        """Return the most recent queue entry.
+
+        Returns:
+            Queue: The most recent queue entry, or `None` if empty.
+        """
+        return (self.session.query(Queue)
+                 .order_by(desc(Queue.datetime))
+                 .first())
 
     def get_predecessor(self, package) -> type[Queue] | None:
         """Return the most recent predecessor for a given package.
@@ -203,7 +222,10 @@ class QueueManager(object):
             package: The PASTA data package identifier (e.g., "scope.id.rev").
 
         Returns:
-            bool | None: Dequeued status, or `None` if the record is not found.
+            bool: Dequeued status.
+
+        Raises:
+            sqlalchemy.orm.exc.NoResultFound: If the package is not found in the queue.
         """
         event = (
             self.session.query(Queue)
