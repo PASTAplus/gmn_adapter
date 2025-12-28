@@ -26,9 +26,8 @@ from sqlalchemy import create_engine
 from sqlalchemy import desc
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.query import Query
 
 from gmn_adapter.config import Config
@@ -53,6 +52,14 @@ class Queue(Base):
     dequeued = Column(Boolean, nullable=False, default=False)
 
 
+class DuplicateQueueEntryError(Exception):
+    """Exception raised when a package already exists in the adapter queue."""
+    def __init__(self, package, message="Package is already enqueued"):
+        self.package = package
+        self.message = f"{message}: {package}"
+        super().__init__(self.message)
+
+
 class QueueManager(object):
     """Queue management for the adapter queue."""
 
@@ -71,7 +78,7 @@ class QueueManager(object):
 
     def delete_queue(self):
         """Remove the SQLite database file from the filesystem."""
-        self.session.close_all()
+        self.session.close()
         Base.metadata.drop_all(self.engine)
         self.engine.dispose()
         if self.queue != ":memory:":
@@ -107,7 +114,14 @@ class QueueManager(object):
 
         Returns:
             None
+
+        Raises:
+            DuplicateQueueEntryError
         """
+        integrity_error = self.session.query(Queue).filter(Queue.package == event.package).count() > 0
+        if integrity_error:
+            raise DuplicateQueueEntryError(event.package)
+
         scope, identifier, revision = event.package.split(".")
 
         event = Queue(
@@ -119,13 +133,8 @@ class QueueManager(object):
             owner=event.owner,
             doi=event.doi,
         )
-        try:
-            self.session.add(event)
-            self.session.commit()
-        except IntegrityError as e:
-            logger.error(e)
-            self.session.rollback()
-            raise e
+        self.session.add(event)
+        self.session.commit()
 
     def get_count(self) -> int:
         """Return the number of records in the adapter queue.
