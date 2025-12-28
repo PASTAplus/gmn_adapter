@@ -22,6 +22,7 @@ from sqlalchemy import insert
 from gmn_adapter.config import Config
 from gmn_adapter.model.adapter_db import Queue, QueueManager
 from gmn_adapter.model.event import Event
+from gmn_adapter.model.resource_registry import ResourceRegistry
 
 
 @pytest.fixture(scope="function")
@@ -51,16 +52,20 @@ def queue_manager():
 def event():
     """Create a test event for use in tests."""
 
-    PACKAGE = "knb-lter-nin.1.1"
+    PACKAGE = "knb-lter-nin.100.1"
     TIMESTAMP = datetime.now(timezone.utc)
-    METHOD = "create"
     OWNER = "EDI-166ebf44ac70835c7ebce152e2219ae5eab16418"
     DOI = "doi:10.6073/pasta/0675d3602ff57f24838ca8d14d7f3961"
 
     return Event(
         package=PACKAGE,
         timestamp=TIMESTAMP,
-        method=METHOD,
         owner=OWNER,
         doi=DOI,
     )
+
+
+@pytest.fixture(scope="function")
+def resource_registry():
+    """Load resource registry data from CSV into a memory-based SQLite database."""
+    return ResourceRegistry()
