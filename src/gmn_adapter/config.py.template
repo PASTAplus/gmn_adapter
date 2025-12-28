@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+"""GMN adapter configuration
+
+Module:
+    config
+
+Author:
+    servilla
+
+Created:
+    2025-12-14
+"""
+from pathlib import Path
+
+import daiquiri
+
+
+logger = daiquiri.getLogger(__name__)
+
+
+class Config:
+    def __init__(self):
+        pass
+
+    # Project paths
+    CWD = Path(__file__).resolve().parent
+    ROOT_DIR = (CWD / ".." / "..").resolve()
+
+    # Adapter Queue Sqlite Database
+    QUEUE =  ROOT_DIR / "QUEUE"
+
+    # GMN user credentials
+    GMN_USER = "GMN_USERg"
+    GMN_PASSWD = "GMN_PASSWD"
+    GMN_CERT_PATH = "GMN_CERT_PATH"
+    GMN_KEY_PATH = "GMN_KEY_PATH"
+
+    # PASTA resource types
+    PACKAGE = "package"
+    METADATA = "metadata"
+    DATA = "data"
+    REPORT = "report"
+    ORE = "ore"
+
+    # PASTA resource URL patterns
+    PACKAGE_PATTERN = "/package/eml"
+    METADATA_PATTERN = "/package/metadata/eml"
+    DATA_PATTERN = "/package/data/eml"
+    REPORT_PATTERN = "/package/report/eml"
+
+    # PASTA data package DB
+    DB_USER = "DB_USER"
+    DB_PW = "DB_PW"
+    DB_HOST = "DB_HOST"
+    DB_PORT = "DB_PORT"
+    DB = "DB"
+    DB_DRIVER = "DB_DRIVER"
+
+    # GMN scope
+    GMN_SCOPE = "GMN_SCOPE"
