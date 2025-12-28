@@ -15,6 +15,7 @@ sqlalchemy = ">=2.0.45,<3"
 sqlite = ">=3.51.1,<4"
 pixi-pycharm = ">=0.0.10,<0.0.11"
 pip = ">=25.3,<26"
+psycopg2-binary = ">=2.9.10,<3"
 
 [pypi-dependencies]
 dataone-common = "*"
