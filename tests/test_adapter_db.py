@@ -20,7 +20,7 @@ import pytest
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from gmn_adapter.config import Config
-from gmn_adapter.model.adapter_db import QueueManager
+from gmn_adapter.model.adapter_db import QueueManager, DuplicateQueueEntryError
 
 import utils.sqlite_utils as su
 
@@ -70,7 +70,7 @@ def test_enqueue(queue_manager, event):
     assert last_event.package == event.package
 
     # Test duplicate event
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DuplicateQueueEntryError):
         queue_manager.enqueue(event)
 
 
