@@ -15,7 +15,10 @@ Created:
 import csv
 from datetime import datetime
 from datetime import timezone
+import logging
+from pathlib import Path
 
+import daiquiri
 import pytest
 from sqlalchemy import insert
 
@@ -23,6 +26,19 @@ from gmn_adapter.config import Config
 from gmn_adapter.model.adapter_db import Queue, QueueManager
 from gmn_adapter.model.event import Event
 from gmn_adapter.model.resource_registry import ResourceRegistry
+
+
+CWD = Path(".").resolve().as_posix()
+LOGFILE = CWD + "/pytest.log"
+daiquiri.setup(
+    level=logging.INFO,
+    outputs=(
+        daiquiri.output.File(LOGFILE),
+        "stdout",
+    ),
+)
+
+logger = daiquiri.getLogger(__name__)
 
 
 @pytest.fixture(scope="function")

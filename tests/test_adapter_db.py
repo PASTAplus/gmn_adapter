@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Test module for the GMN Adapter adapter database model, and specifically
-the QueueManager class.
+"""Summary: Test module for the GMN Adapter adapter database model, and specifically the QueueManager class.
 
 Module:
     test_adapter_db

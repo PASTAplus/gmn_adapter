@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Summary:
+"""Summary: Test module
 
 Module:
     test_event
@@ -14,9 +14,13 @@ Created:
 """
 from datetime import datetime
 
+import daiquiri
 import pytest
 
 from gmn_adapter.model.event import Event
+
+
+logger = daiquiri.getLogger(__name__)
 
 PACKAGE = "knb-lter-nin.1.1"
 SCOPE = "knb-lter-nin"

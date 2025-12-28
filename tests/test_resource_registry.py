@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Summary:
+"""Summary: Test module for PASTA data package resource registry class.
 
 Module:
     test_resource_registry
@@ -13,7 +13,6 @@ Created:
     2025-12-28
 """
 import daiquiri
-import pytest
 
 
 logger = daiquiri.getLogger(__name__)
