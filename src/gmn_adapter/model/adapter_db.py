@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Database model to support queueing objects from PASTA for use by the GMN Adapter.
+"""Summary: Database model to support queueing objects from PASTA's resource_registry for
+use by the GMN Adapter.
 
 Module:
     adapter_db
@@ -46,10 +47,9 @@ class Queue(Base):
     scope = Column(String, nullable=False)
     identifier = Column(Integer, nullable=False)
     revision = Column(Integer, nullable=False)
-    method = Column(String, primary_key=True)
     datetime = Column(DateTime, nullable=False)
     owner = Column(String, nullable=False)
-    doi = Column(String, nullable=False)
+    doi = Column(String, nullable=True)
     dequeued = Column(Boolean, nullable=False, default=False)
 
 
@@ -115,7 +115,6 @@ class QueueManager(object):
             scope=scope,
             identifier=identifier,
             revision=revision,
-            method=event.method,
             datetime=event.timestamp,
             owner=event.owner,
             doi=event.doi,
@@ -155,7 +154,7 @@ class QueueManager(object):
         )
 
     def get_head(self) -> type[Queue]:
-        """Return the first not-yet-dequeued event record.
+        """Return the oldest non-dequeued event record.
 
         Returns:
             Query: Oldest non-dequeued event record.
@@ -216,7 +215,7 @@ class QueueManager(object):
         )
 
     def is_dequeued(self, package) -> bool:
-        """Return whether the specified package/method has been dequeued.
+        """Return whether the specified package has been dequeued.
 
         Args:
             package: The PASTA data package identifier (e.g., "scope.id.rev").
