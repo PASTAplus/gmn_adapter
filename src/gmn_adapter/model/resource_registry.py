@@ -30,7 +30,7 @@ class ResourceRegistry:
     def __init__(self):
         conn_str = (f"{Config.DB_DRIVER}://"
                     f"{Config.DB_USER}:{urllib.parse.quote_plus(Config.DB_PW)}@"
-                    f"{Config.DB_HOST}:{Config.PO}/{Config.DB}")
+                    f"{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB}")
         self._engine = create_engine(conn_str)
 
     def get_from_date_created(self, date_created, limit=None) -> Sequence[Row[Any]]:
