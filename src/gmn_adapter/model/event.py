@@ -46,13 +46,17 @@ class Event(object):
 
         self._timestamp = timestamp
 
-        if not owner.startswith("EDI-"):
-            raise ValueError(f"Invalid owner: {owner}")
+        if owner is None:
+            raise ValueError(f"Owner cannot be None.")
         self._owner = owner
 
-        if not doi.startswith("doi:10.6073/pasta/"):
-            raise ValueError(f"Invalid DOI: {doi}")
         self._doi = doi
+
+    def __str__(self):
+        return f"Package={self._package}, Timestamp={self._timestamp}, Owner={self._owner}, DOI={self._doi}"
+
+    def __repr__(self):
+        return f"<Event(package={self._package}, timestamp={self._timestamp}, owner={self._owner}, doi={self._doi})>"
 
 
     @property
@@ -79,11 +83,6 @@ class Event(object):
     def timestamp(self):
         """datetime: The event timestamp object."""
         return self._timestamp
-
-    @property
-    def method(self):
-        """str: The method associated with the event."""
-        return self._method
 
     @property
     def owner(self):
