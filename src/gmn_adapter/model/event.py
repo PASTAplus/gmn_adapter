@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Provides a simple getter/setter container for events.
+"""Summary: Provides a simple getter/setter container for events.
 
 Module:
     event.py
@@ -26,13 +26,12 @@ logger = daiquiri.getLogger(__name__)
 class Event(object):
     """A container representing an adapter queue event record. """
 
-    def __init__(self, package: str, timestamp: datetime, method: str, owner: str, doi: str):
+    def __init__(self, package: str, timestamp: datetime, owner: str, doi: str):
         """Initialize the Event object.
 
         Args:
             package (str): The PASTA data package identifier.
             timestamp (datetime): The timestamp of the event.
-            method (str): The method associated with the event.
             owner (str): The owner of the package.
             doi (str): The digital object identifier for the package.
         """
@@ -46,11 +45,6 @@ class Event(object):
         self._revision = int(revision)
 
         self._timestamp = timestamp
-
-        if method not in ["create", "update"]:
-            raise ValueError(f"Invalid method: {method}")
-        else:
-            self._method = method
 
         if not owner.startswith("EDI-"):
             raise ValueError(f"Invalid owner: {owner}")
