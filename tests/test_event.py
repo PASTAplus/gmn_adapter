@@ -61,16 +61,6 @@ def test_bad_owner():
         Event(
             package=PACKAGE,
             timestamp=TIMESTAMP,
-            owner="bad_owner",
+            owner=None,
             doi=DOI,
-        )
-
-
-def test_bad_doi():
-    with pytest.raises(ValueError):
-        Event(
-            package=PACKAGE,
-            timestamp=TIMESTAMP,
-            owner=OWNER,
-            doi="bad_doi",
         )

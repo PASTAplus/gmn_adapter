@@ -15,82 +15,44 @@ Author:
 Date:
     2025-12-26
 """
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import daiquiri
 
-
 logger = daiquiri.getLogger(__name__)
 
 
-class Event(object):
-    """A container representing an adapter queue event record. """
+@dataclass(frozen=True)
+class Event:
+    """A container representing an adapter queue event record."""
 
-    def __init__(self, package: str, timestamp: datetime, owner: str, doi: str):
-        """Initialize the Event object.
+    package: str
+    timestamp: datetime
+    owner: str
+    doi: str
 
-        Args:
-            package (str): The PASTA data package identifier.
-            timestamp (datetime): The timestamp of the event.
-            owner (str): The owner of the package.
-            doi (str): The digital object identifier for the package.
-        """
+    # Derived fields: these are not passed to __init__
+    scope: str = field(init=False)
+    identifier: int = field(init=False)
+    revision: int = field(init=False)
 
-        self._package = package
+    def __post_init__(self):
+        """Perform validation and derive components from the package string."""
 
-        # Extract scope, identifier, and revision from package identifier
-        scope, identifier, revision = self._package.split(".")
-        self._scope = scope
-        self._identifier = int(identifier)
-        self._revision = int(revision)
+        # Validation for Owner
+        if self.owner is None:
+            raise ValueError("Owner cannot be None.")
 
-        self._timestamp = timestamp
-
-        if owner is None:
-            raise ValueError(f"Owner cannot be None.")
-        self._owner = owner
-
-        self._doi = doi
+        # Extract and validate scope, identifier, and revision
+        try:
+            scope, identifier, revision = self.package.split(".")
+            # Use object.__setattr__ because the dataclass is frozen
+            object.__setattr__(self, "scope", scope)
+            object.__setattr__(self, "identifier", int(identifier))
+            object.__setattr__(self, "revision", int(revision))
+        except (ValueError, AttributeError) as e:
+            raise ValueError(f"Invalid package format '{self.package}': {e}")
 
     def __str__(self):
-        return f"Package={self._package}, Timestamp={self._timestamp}, Owner={self._owner}, DOI={self._doi}"
-
-    def __repr__(self):
-        return f"<Event(package={self._package}, timestamp={self._timestamp}, owner={self._owner}, doi={self._doi})>"
-
-
-    @property
-    def package(self):
-        """str: The PASTA data package identifier (e.g., 'scope.id.rev')."""
-        return self._package
-
-    @property
-    def scope(self):
-        """str: The scope of the package."""
-        return self._scope
-
-    @property
-    def identifier(self):
-        """int: The identifier of the package."""
-        return self._identifier
-
-    @property
-    def revision(self):
-        """int: The revision of the package."""
-        return self._revision
-
-    @property
-    def timestamp(self):
-        """datetime: The event timestamp object."""
-        return self._timestamp
-
-    @property
-    def owner(self):
-        """str: The owner of the package."""
-        return self._owner
-
-    @property
-    def doi(self):
-        """str: The digital object identifier (DOI) of the package."""
-        return self._doi
-
+        return f"Package={self.package}, Timestamp={self.timestamp}, Owner={self.owner}, DOI={self.doi}"
