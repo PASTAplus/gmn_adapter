@@ -10,6 +10,7 @@ dependencies = [
     "daiquiri>=3.0.0,<4",
     "sqlalchemy>=2.0.45,<3",
     "psycopg2-binary>=2.9.10,<3",
+    "click>=8.3.1,<9",
     "dataone-common",
     "dataone-libclient",
     "pyxb-x",
