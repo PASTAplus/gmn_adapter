@@ -160,11 +160,11 @@ class QueueManager(object):
             .one()
         )
 
-    def get_head(self) -> type[Queue]:
+    def get_head(self) -> type[Queue] | None:
         """Return the oldest non-dequeued event record.
 
         Returns:
-            Query: Oldest non-dequeued event record.
+            Query: Oldest non-dequeued event record, or None if no valid records exist.
         """
         return (
             self.session.query(Queue)
