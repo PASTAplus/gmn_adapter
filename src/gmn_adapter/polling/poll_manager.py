@@ -12,7 +12,6 @@ Author:
 Created:
     2025-12-28
 """
-from datetime import datetime
 import logging
 from pathlib import Path
 import sys
@@ -38,8 +37,13 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
-def poll_manager(bootstrap: bool, limit: int, timestamp: str, verbose: int):
+def poll_manager(bootstrap: bool, limit: int, timestamp: str, verbose: int, version: bool) -> int:
     """Poll the PASTA data package manager for new resources."""
+
+    if version:
+        print(Config.VERSION.read_text("utf-8"))
+        return 0
+
     if bootstrap:
         timestamp = Config.TIMESTAMP
         Path(Config.QUEUE).unlink(missing_ok=True)
@@ -69,27 +73,30 @@ def poll_manager(bootstrap: bool, limit: int, timestamp: str, verbose: int):
         if verbose > 0:
             print(f"No new resources created after: {timestamp}.")
 
-    return
+    return 0
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_bootstrap = "Bootstrap the adapter queue database."
 help_limit = "Chunk limit on the number of polled resources per interation (default=100)."
 help_timestamp = "ISO 8601 timestamp to start polling from."
+help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
+help_version = "Output GMN adapter version and exit."
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--bootstrap", is_flag=True, help=help_bootstrap)
+@click.option("--bootstrap", is_flag=True, default=False, help=help_bootstrap)
 @click.option("--limit", type=int, default=100, help=help_limit)
 @click.option("--timestamp",type=str, help=help_timestamp)
-@click.option("-v", "--verbose", count=True)
-def cli(bootstrap: bool, limit: int, timestamp: str, verbose: int):
+@click.option("-v", "--verbose", count=True, help=help_verbose)
+@click.option("--version", is_flag=True, default=False, help=help_version)
+def cli(bootstrap: bool, limit: int, timestamp: str, verbose: int, version: bool):
     """CLI wrapper for the poll_manager function.\n
 
     The poll_manager function polls the PASTA data package manager for new resources and
     enqueues them in the adapter queue database. See below for options.
 
     """
-    poll_manager(bootstrap, limit, timestamp, verbose)
+    return poll_manager(bootstrap, limit, timestamp, verbose, version)
 
 
 if __name__ == "__main__":
