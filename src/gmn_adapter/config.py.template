@@ -32,6 +32,9 @@ class Config:
     # Adapter Queue Sqlite Database
     QUEUE =  ROOT_DIR / "QUEUE"
 
+    # Boostrap
+    TIMESTAMP = "2013-01-01 00:00:00"
+
     # GMN user credentials
     GMN_USER = "GMN_USERg"
     GMN_PASSWD = "GMN_PASSWD"
