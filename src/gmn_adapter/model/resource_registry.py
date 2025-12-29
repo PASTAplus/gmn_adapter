@@ -22,7 +22,8 @@ from gmn_adapter.config import Config
 
 logger = daiquiri.getLogger(__name__)
 
-SELECT = (f"SELECT * FROM datapackagemanager.resource_registry WHERE CLAUSE AND resource_type = 'dataPackage' AND "
+COLUMNS = "package_id, date_created, doi, principal_owner"
+SELECT = (f"SELECT {COLUMNS} FROM datapackagemanager.resource_registry WHERE CLAUSE AND resource_type = 'dataPackage' AND "
           f"scope LIKE '{Config.GMN_SCOPE}%' ORDER BY date_created LIMIT;")
 
 class ResourceRegistry:
@@ -34,7 +35,7 @@ class ResourceRegistry:
         self._engine = create_engine(conn_str)
 
     def get_from_date_created(self, date_created, limit=None) -> Sequence[Row[Any]]:
-        sql = SELECT.replace("CLAUSE", f"date_created >= '{date_created}'")
+        sql = SELECT.replace("CLAUSE", f"date_created >'{date_created}'")
         if limit is not None:
             sql = sql.replace("LIMIT;", f"LIMIT {limit};")
         else:
