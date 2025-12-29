@@ -25,12 +25,12 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy import create_engine
 from sqlalchemy import desc
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 
 from gmn_adapter.config import Config
+from gmn_adapter.model.event import Event
 
 
 logger = daiquiri.getLogger(__name__)
@@ -63,7 +63,7 @@ class DuplicateQueueEntryError(Exception):
 class QueueManager(object):
     """Queue management for the adapter queue."""
 
-    def __init__(self, queue=Config.QUEUE):
+    def __init__(self, queue: str=Config.QUEUE):
         """Initialize a queue manager backed by an SQLite database.
 
         Args:
@@ -73,8 +73,8 @@ class QueueManager(object):
         db = "sqlite+pysqlite:///" + self.queue
         self.engine = create_engine(db)
         Base.metadata.create_all(self.engine)
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        session = sessionmaker(bind=self.engine)
+        self.session = session()
 
     def delete_queue(self):
         """Remove the SQLite database file from the filesystem."""
@@ -84,7 +84,7 @@ class QueueManager(object):
         if self.queue != ":memory:":
             Path(self.queue).unlink()
 
-    def dequeue(self, package):
+    def dequeue(self, package: str):
         """Mark an event as dequeued.
 
         This method is idempotent.
@@ -106,7 +106,7 @@ class QueueManager(object):
         event.dequeued = True
         self.session.commit()
 
-    def enqueue(self, event=None):
+    def enqueue(self, event: Event=None):
         """Insert a PASTA event into the adapter queue.
 
         Args:
@@ -122,18 +122,16 @@ class QueueManager(object):
         if integrity_error:
             raise DuplicateQueueEntryError(event.package)
 
-        scope, identifier, revision = event.package.split(".")
-
-        event = Queue(
+        record = Queue(
             package=event.package,
-            scope=scope,
-            identifier=identifier,
-            revision=revision,
+            scope=event.scope,
+            identifier=event.identifier,
+            revision=event.revision,
             datetime=event.timestamp,
             owner=event.owner,
             doi=event.doi,
         )
-        self.session.add(event)
+        self.session.add(record)
         self.session.commit()
 
     def get_count(self) -> int:
@@ -144,7 +142,7 @@ class QueueManager(object):
         """
         return self.session.query(func.count(Queue.package)).scalar()
 
-    def get_event(self, package=None) -> type[Queue]:
+    def get_event(self, package: str=None) -> type[Queue]:
         """Return the queue event record for a given package identifier.
 
         Args:
@@ -196,7 +194,7 @@ class QueueManager(object):
                  .order_by(desc(Queue.datetime))
                  .first())
 
-    def get_predecessor(self, package) -> type[Queue] | None:
+    def get_predecessor(self, package: str) -> type[Queue] | None:
         """Return the most recent predecessor for a given package.
 
         A predecessor is an event with the same scope and identifier, but a lower
@@ -223,7 +221,7 @@ class QueueManager(object):
             .first()
         )
 
-    def is_dequeued(self, package) -> bool:
+    def is_dequeued(self, package: str) -> bool:
         """Return whether the specified package has been dequeued.
 
         Args:
