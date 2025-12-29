@@ -28,6 +28,7 @@ class Config:
     # Project paths
     CWD = Path(__file__).resolve().parent
     ROOT_DIR = (CWD / ".." / "..").resolve()
+    VERSION = ROOT_DIR / "src" / "gmn_adapter" / "VERSION.txt"
 
     # Adapter Queue Sqlite Database
     QUEUE =  ROOT_DIR / "QUEUE"
