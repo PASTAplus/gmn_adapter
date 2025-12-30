@@ -37,8 +37,11 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
-def poll_manager(bootstrap: bool, limit: int, timestamp: str, verbose: int, version: bool) -> int:
+def poll_manager(bootstrap: bool, limit: int, scope: str, timestamp: str, verbose: int, version: bool) -> int:
     """Poll the PASTA data package manager for new resources."""
+
+    if scope not in ["EDI", "LTER"]:
+        raise ValueError(f"Invalid scope: {scope}")
 
     if version:
         print(Config.VERSION.read_text("utf-8"))
@@ -79,6 +82,7 @@ def poll_manager(bootstrap: bool, limit: int, timestamp: str, verbose: int, vers
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_bootstrap = "Bootstrap the adapter queue database."
 help_limit = "Chunk limit on the number of polled resources per interation (default=100)."
+help_scope = "PASTA based scope to poll (EDI or LTER)."
 help_timestamp = "ISO 8601 timestamp to start polling from."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
 help_version = "Output GMN adapter version and exit."
@@ -86,17 +90,18 @@ help_version = "Output GMN adapter version and exit."
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--bootstrap", is_flag=True, default=False, help=help_bootstrap)
 @click.option("--limit", type=int, default=100, help=help_limit)
+@click.option("--scope", type=str, help=help_scope)
 @click.option("--timestamp",type=str, help=help_timestamp)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, help=help_version)
-def cli(bootstrap: bool, limit: int, timestamp: str, verbose: int, version: bool):
+def cli(bootstrap: bool, limit: int, scope: str, timestamp: str, verbose: int, version: bool):
     """CLI wrapper for the poll_manager function.\n
 
     The poll_manager function polls the PASTA data package manager for new resources and
     enqueues them in the adapter queue database. See below for options.
 
     """
-    return poll_manager(bootstrap, limit, timestamp, verbose, version)
+    return poll_manager(bootstrap, limit, scope, timestamp, verbose, version)
 
 
 if __name__ == "__main__":
