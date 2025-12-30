@@ -83,5 +83,8 @@ def event():
 
 @pytest.fixture(scope="function")
 def resource_registry():
-    """Load resource registry data from CSV into a memory-based SQLite database."""
-    return ResourceRegistry()
+    """Create a database connection to a PASTA resource registry targeting either
+    the EDI or LTER scope values.
+    """
+    scope = "LTER"
+    return ResourceRegistry(scope)
