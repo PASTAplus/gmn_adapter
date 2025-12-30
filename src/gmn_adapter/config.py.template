@@ -22,8 +22,6 @@ logger = daiquiri.getLogger(__name__)
 
 
 class Config:
-    def __init__(self):
-        pass
 
     # Project paths
     CWD = Path(__file__).resolve().parent
@@ -36,11 +34,19 @@ class Config:
     # Boostrap
     TIMESTAMP = "2013-01-01 00:00:00"
 
-    # GMN user credentials
-    GMN_USER = "GMN_USERg"
+    # GMN configuration
+    GMN_USER = "GMN_USER"
     GMN_PASSWD = "GMN_PASSWD"
-    GMN_CERT_PATH = "GMN_CERT_PATH"
-    GMN_KEY_PATH = "GMN_KEY_PATH"
+    GMN_EDI_CERT_PATH = "GMN_EDI_CERT_PATH"
+    GMN_EDI_KEY_PATH = "GMN_EDI_KEY_PATH"
+    GMN_LTER_CERT_PATH = "GMN_LTER_CERT_PATH"
+    GMN_LTER_KEY_PATH = "GMN_LTER_KEY_PATH"
+    GMN_EDI_BASE_URL = "https://gmn.edirepository.org/mn/"
+    GMN_LTER_BASE_URL = "https://gmn.lternet.edu/mn/"
+    CHECKSUM_ALGORITHM = "SHA-1"
+    DEFAULT_RIGHTS_HOLDER = "DEFAULT_RIGHTS_HOLDER"
+    GMN_SCOPE = "GMN_SCOPE"
+    VERIFY_TLS = True
 
     # PASTA resource types
     PACKAGE = "package"
@@ -62,6 +68,3 @@ class Config:
     DB_PORT = "DB_PORT"
     DB = "DB"
     DB_DRIVER = "DB_DRIVER"
-
-    # GMN scope
-    GMN_SCOPE = "GMN_SCOPE"
