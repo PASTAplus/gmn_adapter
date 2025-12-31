@@ -21,6 +21,7 @@ import d1_client.cnclient_2_0
 import d1_client.mnclient_2_0
 
 from gmn_adapter.config import Config
+from gmn_adapter.models.dataone.sysmeta import SysMeta
 
 logger = daiquiri.getLogger(__name__)
 
@@ -46,8 +47,12 @@ class Client:
             verify_tls=Config.VERIFY_TLS
         )
 
-    def get_system_metadata(self, pid: str):
-        return self.client.getSystemMetadata(pid=pid)
+    def get_system_metadata(self, pid: str, raw: bool = False):
+        sysmeta = self.client.getSystemMetadata(pid=pid)
+        if raw:
+            return sysmeta
+        else:
+            return sysmeta
 
     def list_objects(self):
         return self.client.listObjects()
