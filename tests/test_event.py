@@ -17,7 +17,7 @@ from datetime import datetime
 import daiquiri
 import pytest
 
-from gmn_adapter.model.event import Event
+from gmn_adapter.models.adapter.event import Event
 
 
 logger = daiquiri.getLogger(__name__)

@@ -16,10 +16,10 @@ from datetime import datetime
 
 import daiquiri
 import pytest
-from sqlalchemy.exc import NoResultFound, IntegrityError
+from sqlalchemy.exc import NoResultFound
 
 from gmn_adapter.config import Config
-from gmn_adapter.model.adapter_db import QueueManager, DuplicateQueueEntryError
+from gmn_adapter.models.adapter.adapter_db import QueueManager, DuplicateQueueEntryError
 
 import utils.sqlite_utils as su
 
