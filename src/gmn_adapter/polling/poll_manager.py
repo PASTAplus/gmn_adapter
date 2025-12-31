@@ -20,9 +20,9 @@ import click
 import daiquiri
 
 from gmn_adapter.config import Config
-from gmn_adapter.model.adapter_db import QueueManager
-from gmn_adapter.model.event import Event
-from gmn_adapter.model.resource_registry import ResourceRegistry
+from gmn_adapter.models.adapter.adapter_db import QueueManager
+from gmn_adapter.models.adapter.event import Event
+from gmn_adapter.models.adapter.resource_registry import ResourceRegistry
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
 CWD = Path(".").resolve().as_posix()
