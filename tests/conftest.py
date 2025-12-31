@@ -23,9 +23,9 @@ import pytest
 from sqlalchemy import insert
 
 from gmn_adapter.config import Config
-from gmn_adapter.model.adapter_db import Queue, QueueManager
-from gmn_adapter.model.event import Event
-from gmn_adapter.model.resource_registry import ResourceRegistry
+from gmn_adapter.models.adapter.adapter_db import Queue, QueueManager
+from gmn_adapter.models.adapter.event import Event
+from gmn_adapter.models.adapter.resource_registry import ResourceRegistry
 
 
 CWD = Path(".").resolve().as_posix()
