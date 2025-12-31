@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Summary: Database model to support queueing objects from PASTA's resource_registry for
-use by the GMN Adapter.
+   use by the GMN Adapter.
 
 Module:
     adapter_db
@@ -30,7 +30,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 
 from gmn_adapter.config import Config
-from gmn_adapter.model.event import Event
+from gmn_adapter.models.adapter.event import Event
 
 
 logger = daiquiri.getLogger(__name__)
@@ -38,7 +38,7 @@ Base = declarative_base()
 
 
 class Queue(Base):
-    """SQLAlchemy ORM model for the adapter queue."""
+    """SQLAlchemy ORM models for the adapter queue."""
 
     __tablename__ = "queue"
 
@@ -110,7 +110,7 @@ class QueueManager(object):
         """Insert a PASTA event into the adapter queue.
 
         Args:
-            event: Instance of the model `Event` class.
+            event: Instance of the models `Event` class.
 
         Returns:
             None
