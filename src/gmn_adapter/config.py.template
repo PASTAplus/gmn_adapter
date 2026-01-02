@@ -26,6 +26,8 @@ class Config:
     # Project paths
     CWD = Path(__file__).resolve().parent
     ROOT_DIR = (CWD / ".." / "..").resolve()
+    ASSETS_DIR = ROOT_DIR / "assets"
+    CERTS_DIR = ROOT_DIR / "certs"
     VERSION = ROOT_DIR / "src" / "gmn_adapter" / "VERSION.txt"
 
     # Adapter Queue Sqlite Database
@@ -47,6 +49,8 @@ class Config:
     DEFAULT_RIGHTS_HOLDER = "DEFAULT_RIGHTS_HOLDER"
     GMN_SCOPE = "GMN_SCOPE"
     VERIFY_TLS = True
+    MIME_TYPES = str(ASSETS_DIR / "mime_types")
+
 
     # PASTA resource types
     PACKAGE = "package"
