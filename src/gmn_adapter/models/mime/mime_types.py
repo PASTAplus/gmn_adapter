@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Summary:
+"""Summary: Load up IANA mime types from CSV files into an accessible dictionary.
+   Note: I decided to load the mime types from CSV files instead of having a static dictionary for
+   flexibility and ease of maintainability.
 
 Module:
     mime_types
