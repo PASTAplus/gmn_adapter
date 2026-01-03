@@ -50,17 +50,5 @@ class Allow(BaseModel):
     """
     model_config = ConfigDict(frozen=True)
 
-    access_rule: List[AccessRule] = Field(min_length=1)
-
-
-class AccessRule(BaseModel):
-    """
-    Represents an access rule for a DataONE access policy.
-
-    Pydantic automatically coerces the 'permission' field from
-    valid strings (e.g., "changePermission") into the Permission Enum.
-    """
-    model_config = ConfigDict(frozen=True)
-
     subject: List[str] = Field(min_length=1)
     permission: List[Permission] = Field(min_length=1)
