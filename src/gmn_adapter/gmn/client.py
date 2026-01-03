@@ -12,13 +12,13 @@ Author:
 Created:
     2025-12-29
 """
-
+import json
 
 import daiquiri
 
-import d1_common
 import d1_client.cnclient_2_0
 import d1_client.mnclient_2_0
+from d1_common.types.generated.dataoneTypes_v2_0 import SystemMetadata
 
 from gmn_adapter.config import Config
 from gmn_adapter.models.dataone.sysmeta import SysMeta
@@ -47,13 +47,12 @@ class Client:
             verify_tls=Config.VERIFY_TLS
         )
 
-    def get_system_metadata(self, pid: str, raw: bool = False):
-        sysmeta = self.client.getSystemMetadata(pid=pid)
+    def get_system_metadata(self, pid: str, raw: bool = False) -> SysMeta | SystemMetadata:
+        sys_meta = self.client.getSystemMetadata(pid=pid)
         if raw:
-            return sysmeta
+            return sys_meta
         else:
-            return sysmeta
+            return SysMeta.from_pyxb(sys_meta)
 
     def list_objects(self):
         return self.client.listObjects()
-
