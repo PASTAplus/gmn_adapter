@@ -23,6 +23,9 @@ logger = daiquiri.getLogger(__name__)
 
 @dataclass
 class ReplicationPolicy:
+    """
+    DataONE replication policy model.
+    """
     preferred_member_node: list
     blocked_member_node: list
     replication_allowed: bool
