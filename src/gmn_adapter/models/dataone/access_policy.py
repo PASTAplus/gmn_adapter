@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Summary:
+Provides a Pydantic-based model for DataONE access policies.
 
 Module:
     access_policy
@@ -10,14 +11,13 @@ Author:
     servilla
 
 Created:
-    2025-12-31
+    2026-01-02
 """
-from dataclasses import dataclass, asdict
 from enum import Enum
-import json
+from typing import List
 
+from pydantic import BaseModel, ConfigDict, Field
 import daiquiri
-
 
 logger = daiquiri.getLogger(__name__)
 
@@ -31,22 +31,36 @@ class Permission(Enum):
     CHANGE_PERMISSION = "changePermission"
 
 
-@dataclass
-class AccessPolicy:
-    subject: str
-    permission: Permission
+class AccessPolicy(BaseModel):
+    """
+    Represents an access policy for a DataONE object.
 
-    def __post_init__(self):
-        """
-        Perform post-initialization validation and coercion of components from inputs.
-        """
-        if not isinstance(self.permission, Permission):
-            try:
-                # If passed a string like "read", convert it to the Enum
-                val = Permission(self.permission)
-                object.__setattr__(self, "permission", val)
-            except ValueError:
-                raise TypeError(
-                    f"permission must be a Permission enum or valid string. "
-                    f"Got: {self.permission!r}"
-                )
+    Pydantic automatically handles coercion for:
+    """
+    model_config = ConfigDict(frozen=True)
+
+    allow: List[Allow] = Field(default_factory=list)
+
+
+class Allow(BaseModel):
+    """
+    Represents an allow-sequence for a DataONE allow policy.
+
+    Pydantic automatically handles coercion for:
+    """
+    model_config = ConfigDict(frozen=True)
+
+    access_rule: List[AccessRule] = Field(min_length=1)
+
+
+class AccessRule(BaseModel):
+    """
+    Represents an access rule for a DataONE access policy.
+
+    Pydantic automatically coerces the 'permission' field from
+    valid strings (e.g., "changePermission") into the Permission Enum.
+    """
+    model_config = ConfigDict(frozen=True)
+
+    subject: List[str] = Field(min_length=1)
+    permission: List[Permission] = Field(min_length=1)
