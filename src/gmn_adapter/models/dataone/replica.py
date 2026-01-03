@@ -24,6 +24,9 @@ logger = daiquiri.getLogger(__name__)
 
 
 class ReplicaStatus(Enum):
+    """
+    Represents the different statuses a replica can have.
+    """
     QUEUED = "queued"
     REQUESTED = "requested"
     COMPLETED = "completed"
@@ -33,11 +36,17 @@ class ReplicaStatus(Enum):
 
 @dataclass(frozen=True)
 class Replica:
+    """
+    Represents a replica model of a DataONE object.
+    """
     replica_member_node: str
     replication_status: ReplicaStatus
     replication_verified: datetime
 
     def __post_init__(self):
+        """
+        Perform post-initialization validation and coercion of components from inputs.
+        """
         if not isinstance(self.replication_status, ReplicaStatus):
             try:
                 # If passed a string like "queued", convert it to the Enum
