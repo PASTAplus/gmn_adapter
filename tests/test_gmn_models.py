@@ -19,7 +19,7 @@ import pytest
 import daiquiri
 
 from gmn_adapter.config import Config
-from gmn_adapter.models.dataone.access_policy import AccessPolicy, Allow, Permission
+from gmn_adapter.models.dataone.access_policy import AccessPolicy, AccessRule, Permission
 from gmn_adapter.models.dataone.checksum import Checksum
 from gmn_adapter.models.dataone.replica import Replica, ReplicaStatus
 from gmn_adapter.models.dataone.replication_policy import ReplicationPolicy
@@ -81,14 +81,14 @@ def test_replication_policy():
 
 def test_access_policy():
     # Test complete access policy
-    allow = Allow(
+    access_rule = AccessRule(
         subject=["EDI-62b5844b7c2dcfd36c37c41b13f4b037c917a901"],
         permission=[Permission.CHANGE_PERMISSION]
     )
-    assert allow is not None
+    assert access_rule is not None
 
     access_policy = AccessPolicy(
-        allow=[allow]
+        allow=[access_rule]
     )
     assert access_policy is not None
 
@@ -100,11 +100,11 @@ def test_access_policy():
 
     # Test invalid permission
     with pytest.raises(ValidationError):
-        allow = Allow(
+        access_rule = AccessRule(
             subject=["EDI-62b5844b7c2dcfd36c37c41b13f4b037c917a901"],
             permission=["execute"]
         )
-        assert allow is not None
+        assert access_rule is not None
 
 
 def test_sys_meta():
@@ -124,7 +124,7 @@ def test_sys_meta():
     )
     assert sys_meta is not None
 
-    allow = Allow(
+    allow = AccessRule(
         subject=["EDI-62b5844b7c2dcfd36c37c41b13f4b037c917a901"],
         permission=[Permission.CHANGE_PERMISSION]
     )
