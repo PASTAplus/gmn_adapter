@@ -29,8 +29,6 @@ class ReplicationPolicy(BaseModel):
         replication_allowed (bool): Boolean flag for replication permission.
         number_replicas (int): Desired number of replicas.
     """
-    model_config = ConfigDict(frozen=True)
-
     # Use Field(default_factory=list) to ensure these are always lists, even if empty
     preferred_member_node: list[str] = Field(default_factory=list)
     blocked_member_node: list[str] = Field(default_factory=list)
