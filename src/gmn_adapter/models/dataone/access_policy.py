@@ -39,10 +39,10 @@ class AccessPolicy(BaseModel):
     """
     model_config = ConfigDict(frozen=True)
 
-    allow: List[Allow] = Field(default_factory=list)
+    allow: List[AccessRule] = Field(default_factory=list)
 
 
-class Allow(BaseModel):
+class AccessRule(BaseModel):
     """
     Represents an allow-sequence for a DataONE allow policy.
 
