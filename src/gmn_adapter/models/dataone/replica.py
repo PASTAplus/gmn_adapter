@@ -40,10 +40,12 @@ class Replica(BaseModel):
     Pydantic automatically handles coercion for:
     - ReplicaStatus (from valid strings)
     - datetime (from ISO 8601 strings)
-    """
-    # Use ConfigDict to make the model immutable (like frozen=True)
-    model_config = ConfigDict(frozen=True)
 
+    Attributes:
+        replica_member_node (str): The member node where the replica is stored.
+        replication_status (ReplicaStatus): The current status of the replica.
+        replication_verified (datetime): The timestamp when the replica was verified.
+    """
     replica_member_node: str
     replication_status: ReplicaStatus
     replication_verified: datetime
