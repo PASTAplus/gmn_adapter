@@ -25,6 +25,9 @@ dev = [
     "hatchling",
 ]
 
+[project.scripts]
+sysmeta = "gmn_adapter.gmn.cli.sysmeta:sysmeta"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
