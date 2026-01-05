@@ -13,7 +13,7 @@ Created:
     2026-01-03
 """
 import daiquiri
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 logger = daiquiri.getLogger(__name__)
 
