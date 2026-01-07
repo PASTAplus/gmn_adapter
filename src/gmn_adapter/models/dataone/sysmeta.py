@@ -19,7 +19,7 @@ import daiquiri
 from d1_common.types.generated.dataoneTypes_v2_0 import SystemMetadata
 import d1_common.types.generated.dataoneTypes_v1 as dataoneTypes_v1
 import d1_common.types.generated.dataoneTypes_v2_0 as dataoneTypes_v2_0
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from gmn_adapter.models.dataone.access_policy import AccessPolicy, AccessRule
 from gmn_adapter.models.dataone.checksum import Checksum
@@ -79,6 +79,7 @@ class SysMeta(BaseModel):
     obsoleted_by: Optional[str] = None
     archived: Optional[bool] = None
     date_uploaded: Optional[datetime] = None
+    date_sys_metadata_modified: Optional[datetime] = None
     origin_member_node: Optional[str] = None
     authoritative_member_node: Optional[str] = None
     series_id: Optional[str] = None
@@ -162,6 +163,10 @@ class SysMeta(BaseModel):
         if system_metadata.dateUploaded is not None:
             date_uploaded = system_metadata.dateUploaded
 
+        date_sys_metadata_modified = None
+        if system_metadata.dateSysMetadataModified is not None:
+            date_sys_metadata_modified = system_metadata.dateSysMetadataModified
+
         origin_member_node = None
         if system_metadata.originMemberNode is not None:
             origin_member_node = system_metadata.originMemberNode.value()
@@ -197,6 +202,7 @@ class SysMeta(BaseModel):
             obsoleted_by=obsoleted_by,
             archived=archived,
             date_uploaded=date_uploaded,
+            date_sys_metadata_modified=date_sys_metadata_modified,
             origin_member_node=origin_member_node,
             authoritative_member_node=authoritative_member_node,
             series_id=series_id,
@@ -267,6 +273,9 @@ class SysMeta(BaseModel):
 
         if sys_meta.date_uploaded is not None:
             system_metadata.dateUploaded = sys_meta.date_uploaded.isoformat()
+
+        if sys_meta.date_sys_metadata_modified is not None:
+            system_metadata.dateSysMetadataModified = sys_meta.date_sys_metadata_modified.isoformat()
 
         if sys_meta.origin_member_node is not None:
             system_metadata.originMemberNode = sys_meta.origin_member_node
