@@ -20,6 +20,7 @@ from d1_common.types.generated.dataoneTypes_v2_0 import SystemMetadata
 from gmn_adapter.config import Config
 from gmn_adapter.models.dataone.sysmeta import SysMeta
 
+
 logger = daiquiri.getLogger(__name__)
 
 
@@ -70,8 +71,12 @@ class Client:
             pid (str): The persistent identifier (PID) of the object.
             sys_meta (SysMeta): The system metadata object.
         """
+        # Sanitize system metadata for GMN
+        sys_meta.serial_version = None
+        sys_meta.submitter = None
+
         system_metadata = SysMeta.to_pyxb(sys_meta)
-        print(system_metadata.toxml("utf-8"))
+        logger.debug(system_metadata.toxml("utf-8"))
         self.client.updateSystemMetadata(pid=pid, sysmeta_pyxb=system_metadata)
 
     # GMN member node
