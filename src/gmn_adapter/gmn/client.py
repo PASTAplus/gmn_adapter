@@ -12,11 +12,8 @@ Author:
 Created:
     2025-12-29
 """
-import json
-
 import daiquiri
 
-import d1_client.cnclient_2_0
 import d1_client.mnclient_2_0
 from d1_common.types.generated.dataoneTypes_v2_0 import SystemMetadata
 
@@ -47,12 +44,36 @@ class Client:
             verify_tls=Config.VERIFY_TLS
         )
 
+    # System metadata
     def get_system_metadata(self, pid: str, raw: bool = False) -> SysMeta | SystemMetadata:
-        sys_meta = self.client.getSystemMetadata(pid=pid)
-        if raw:
-            return sys_meta
-        else:
-            return SysMeta.from_pyxb(sys_meta)
+        """
+        Retrieve system metadata for a given PID.
 
+        Args:
+            pid (str): The persistent identifier (PID) of the object.
+            raw (bool, optional): If True, return the raw pyxb object. Defaults to False.
+
+        Returns:
+            SysMeta | SystemMetadata: The system metadata object.
+        """
+        system_metadata: SystemMetadata = self.client.getSystemMetadata(pid=pid) # system_metadata is a pyxb object
+        if raw:
+            return system_metadata  # Pyxb object
+        else:
+            return SysMeta.from_pyxb(system_metadata)
+
+    def update_system_metadata(self, pid: str, sys_meta: SysMeta):
+        """
+        Update system metadata for a given PID.
+
+        Args:
+            pid (str): The persistent identifier (PID) of the object.
+            sys_meta (SysMeta): The system metadata object.
+        """
+        system_metadata = SysMeta.to_pyxb(sys_meta)
+        print(system_metadata.toxml("utf-8"))
+        self.client.updateSystemMetadata(pid=pid, sysmeta_pyxb=system_metadata)
+
+    # GMN member node
     def list_objects(self):
         return self.client.listObjects()
