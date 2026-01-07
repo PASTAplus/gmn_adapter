@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Summary:
+"""Summary: Retrieve and update system metadata for a given MN and PID.
 
 Module:
     sysmeta
@@ -10,55 +10,30 @@ Author:
     servilla
 
 Created:
-    2025-12-29
+    2026-01-06
 """
-import logging
-from pathlib import Path
 import sys
 
 import click
 import daiquiri
 
-from gmn_adapter.config import Config
 from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.dataone.sysmeta import SysMeta
 
 
-
-# Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
-CWD = Path(".").resolve().as_posix()
-LOGFILE = CWD + "/sysmeta.log"
-daiquiri.setup(
-    level=logging.INFO,
-    outputs=(
-        daiquiri.output.Stream(sys.stderr, level=logging.WARNING),
-        daiquiri.output.File(LOGFILE, level=logging.INFO),
-    ),
-)
 logger = daiquiri.getLogger(__name__)
 
-
-def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> None:
-    if not value or ctx.resilient_parsing:
-        return
-    print(f"gmn_adapter version: {Config.VERSION.read_text("utf-8")}")
-    ctx.exit()
-
-
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("mn")
-@click.argument("pid")
+@click.command()
+@click.argument("mn", type=str)
+@click.argument("pid", type=str)
 @click.option("-f", "--full", is_flag=True, default=False,
               help="Display full system metadata, including empty fields.")
 @click.option("-u", "--update", type=click.Path(exists=True),
               help="Update system metadata from JSON file.")
 @click.option("-v", "--verify", is_flag=True, default=False,
               help="Verify system metadata has been updated successfully.")
-@click.option("--version", is_flag=True, default=False, callback=print_version,
-              expose_value=False, is_eager=True, help="Output GMN adapter version and exit.")
-def sysmeta(mn: str, pid: str, full: bool, update: str, verify: bool):
+@click.pass_context
+def sysmeta(ctx, mn: str, pid: str, full: bool, update: str, verify: bool):
     """
     Retrieve and update system metadata for a given MN and PID.
 
@@ -75,7 +50,7 @@ def sysmeta(mn: str, pid: str, full: bool, update: str, verify: bool):
 
     client = Client(mn)
 
-    # Update system metadata from JSON file, then exit.
+    # Update system metadata from the JSON file, then exit.
     if update:
         with open(update, "r") as f:
             sys_meta: SysMeta = SysMeta.model_validate_json(f.read())
@@ -84,7 +59,7 @@ def sysmeta(mn: str, pid: str, full: bool, update: str, verify: bool):
         click.confirm("Update system metadata?", abort=True)
         click.echo(f"Updating system metadata for \"{mn}: {pid}\".")
         logger.info(f"Updating system metadata for \"{mn}: {pid}\".")
-        # TODO: client.update_system_metadata(pid, sys_meta)
+        client.update_system_metadata(pid, sys_meta)
         if verify:
             sys_meta: SysMeta = client.get_system_metadata(pid)
             print("\n")
@@ -96,7 +71,3 @@ def sysmeta(mn: str, pid: str, full: bool, update: str, verify: bool):
     logger.info(f"Dumping system metadata for \"{mn}: {pid}\".")
     print(sys_meta.model_dump_json(indent=4, exclude_none=exclude_none))
     exit(0)
-
-
-if __name__ == "__main__":
-    sysmeta()
