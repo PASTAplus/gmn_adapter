@@ -86,3 +86,5 @@ def save_sysmeta_cache(sysmeta: SysMeta, filepath: str):
         f.write(sysmeta.model_dump_json(indent=2, exclude_none=True))
 
 ```
+
+20260110-20:36 -- The first step in adding a new data package to GMN is to determine if all resources are "public" readable. To achieve this criterion, we need to use IAM-lib and call "isAuthorized" for each resource. 
