@@ -12,9 +12,11 @@ dynamic = ["version"]
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64", "linux-aarch64"]
+preview = ["pixi-build"]
 
 [tool.pixi.pypi-dependencies]
 gmn_adapter = { path = ".", editable = true }
+iam_lib = { git = "https://github.com/PASTAplus/iam-lib.git" }
 
 [tool.pixi.tasks]
 
