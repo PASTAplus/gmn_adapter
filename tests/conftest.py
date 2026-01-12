@@ -25,7 +25,7 @@ from sqlalchemy import insert
 from gmn_adapter.config import Config
 from gmn_adapter.models.adapter.adapter_db import Queue, QueueManager
 from gmn_adapter.models.adapter.event import Event
-from gmn_adapter.models.adapter.resource_registry import ResourceRegistry
+from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
 
 
 CWD = Path(".").resolve().as_posix()
@@ -43,7 +43,9 @@ logger = daiquiri.getLogger(__name__)
 
 @pytest.fixture(scope="function")
 def queue_manager():
-    """Load data package manager queue data from CSV into a memory-based SQLite database."""
+    """
+    Load data package manager queue data from CSV into a memory-based SQLite database.
+    """
 
     data_path = Config.ROOT_DIR / "tests" / "data" / "adapter_queue.csv"
     data = []
@@ -66,7 +68,9 @@ def queue_manager():
 
 @pytest.fixture(scope="session")
 def event():
-    """Create a test event for use in tests."""
+    """
+    Create a test event for use in tests.
+    """
 
     PACKAGE = "knb-lter-nin.100.1"
     TIMESTAMP = datetime.now(timezone.utc)
@@ -81,10 +85,9 @@ def event():
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def resource_registry():
-    """Create a database connection to a PASTA resource registry targeting either
-    the EDI or LTER scope values.
     """
-    scope = "LTER"
-    return ResourceRegistry(scope)
+    Create a database connection to a PASTA resource registry.
+    """
+    return ResourceRegistry()
