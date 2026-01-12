@@ -22,7 +22,7 @@ import daiquiri
 from gmn_adapter.config import Config
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.adapter.event import Event
-from gmn_adapter.models.adapter.resource_registry import ResourceRegistry
+from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
 CWD = Path(".").resolve().as_posix()
@@ -37,7 +37,14 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
-def poll_manager(bootstrap: bool, limit: int, scope: str, timestamp: str, verbose: int, version: bool) -> int:
+def poll_manager(
+    bootstrap: bool,
+    limit: int,
+    scope: str,
+    timestamp: str,
+    verbose: int,
+    version: bool
+) -> int:
     """Poll the PASTA data package manager for new resources."""
 
     if scope not in ["EDI", "LTER"]:
@@ -57,7 +64,7 @@ def poll_manager(bootstrap: bool, limit: int, scope: str, timestamp: str, verbos
         timestamp = (queue_manager.get_last_datetime()).isoformat()
 
     resource_registry = ResourceRegistry()
-    resources = resource_registry.get_from_date_created(timestamp, limit=limit)
+    resources = resource_registry.get_from_date_created(scope=scope, date_created=timestamp, limit=limit)
     while resources:
         for resource in resources:
             package = resource[0]
@@ -82,7 +89,7 @@ def poll_manager(bootstrap: bool, limit: int, scope: str, timestamp: str, verbos
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_bootstrap = "Bootstrap the adapter queue database."
 help_limit = "Chunk limit on the number of polled resources per interation (default=100)."
-help_scope = "PASTA based scope to poll (EDI or LTER)."
+help_scope = "PASTA based scopes to poll (EDI or LTER)."
 help_timestamp = "ISO 8601 timestamp to start polling from."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
 help_version = "Output GMN adapter version and exit."
