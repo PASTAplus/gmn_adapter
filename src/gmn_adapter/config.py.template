@@ -51,6 +51,11 @@ class Config:
     VERIFY_TLS = True
     MIME_TYPES = str(ASSETS_DIR / "mime_types")
 
+    # PASTA configuration
+    PASTA_HOST = "PASTA_HOST"
+    PASTA_PORT = "PASTA_PORT"
+    PASTA_PROTOCOL = "PASTA_PROTOCOL"
+    PASTA_SERVICE = f"{PASTA_PROTOCOL}://{PASTA_HOST}:{PASTA_PORT}"
 
     # PASTA resource types
     PACKAGE = "package"
