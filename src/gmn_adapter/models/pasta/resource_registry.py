@@ -33,6 +33,18 @@ class ResourceRegistry:
         self._engine = create_engine(conn_str)
 
     def get_from_date_created(self, scope: str, date_created: str, limit: int=None) -> Sequence[Row[Any]]:
+        """
+        Retrieve an ascending ordered list of resource registry entries created after a given date.
+
+        Args:
+            scope (str): The scope (either EDI or LTER) for which to retrieve entries.
+            date_created (str): The date created threshold.
+            limit (int, optional): The maximum number of entries to retrieve.
+
+        Returns:
+            Sequence[Row[Any]]: The retrieved resource registry entries.
+
+        """
         if scope == "EDI":
             scopes = Config.EDI_SCOPES
         elif scope == "LTER":
@@ -56,6 +68,17 @@ class ResourceRegistry:
         return result.fetchall()
 
     def get_resource_ids(self, scope: str, identifier: str, revision: str) -> Sequence[Row[Any]]:
+        """
+        Retrieves a list of data package resources identifiers and resource types.
+
+        Args:
+            scope (str): The scope value of the data package.
+            identifier: The identifier value of the data package.
+            revision: The revision value of the data package.
+
+        Returns:
+            Sequence[Row[Any]]: A sequence of rows containing the resource ID and resource type.
+        """
         columns = "resource_id, resource_type"
         select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
                   f"WHERE scope = '{scope}' AND "
@@ -67,6 +90,19 @@ class ResourceRegistry:
         return result.fetchall()
 
     def get_package_doi(self, scope: str, identifier: str, revision: str) -> Sequence[Row[Any]]:
+        """
+        Retrieves the Digital Object Identifier (DOI) of a data package for a specific
+        scope, identifier, and revision.
+
+        Args:
+            scope (str): The scope value of the data package.
+            identifier: The identifier value of the data package.
+            revision: The revision value of the data package.
+
+        Returns:
+            Sequence[Row[Any]]: A sequence of rows, each containing the DOI of the matching
+            data package.
+        """
         columns = "doi"
         select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
                   f"WHERE scope = '{scope}' AND "
@@ -79,6 +115,22 @@ class ResourceRegistry:
         return result.fetchall()
 
     def get_date_deactivated(self, scope: str, identifier: str, revision: str) -> Sequence[Row[Any]]:
+        """
+        Retrieves the date_deactivated (or null) of a data package for a specific scope, identifier, and revision.
+
+        This method retrieves a list of rows containing the deactivation date of a
+        data package from the database. It performs a query with the specified filter
+        criteria and returns the result as a sequence of rows.
+
+        Args:
+            scope (str): The scope value of the data package.
+            identifier: The identifier value of the data package.
+            revision: The revision value of the data package.
+
+        Returns:
+            Sequence[Row[Any]]: A sequence of rows containing the date_deactivated values
+            that match the provided filter criteria.
+        """
         columns = "date_deactivated"
         select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
                   f"WHERE scope = '{scope}' AND "
