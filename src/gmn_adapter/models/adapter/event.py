@@ -15,44 +15,48 @@ Author:
 Date:
     2025-12-26
 """
-from dataclasses import dataclass, field
 from datetime import datetime
 
 import daiquiri
+from pydantic import BaseModel, computed_field, field_validator
+
 
 logger = daiquiri.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class Event:
-    """A container representing an adapter queue event record."""
+class Event(BaseModel):
+    """An optimized container representing an adapter queue event record."""
 
     package: str
     timestamp: datetime
     owner: str
-    doi: str
+    doi: str | None
 
-    # Derived fields: these are not passed to __init__
-    scope: str = field(init=False)
-    identifier: int = field(init=False)
-    revision: int = field(init=False)
+    @field_validator("package")
+    @classmethod
+    def validate_package_format(cls, package: str) -> str:
+        """Ensure the package identifier follows the 'scope.identifier.revision' format."""
+        parts = package.split(".")
+        if len(parts) != 3:
+            raise ValueError(f"Package '{package}' must be in format 'scope.identifier.revision'")
+        if not parts[1].isdigit() or not parts[2].isdigit():
+            raise ValueError(f"Identifier and Revision in '{package}' must be numeric")
+        return package
 
-    def __post_init__(self):
-        """Perform validation and derive components from the package string."""
+    @computed_field
+    @property
+    def scope(self) -> str:
+        return self.package.split(".")[0]
 
-        # Validation for Owner
-        if self.owner is None:
-            raise ValueError("Owner cannot be None.")
+    @computed_field
+    @property
+    def identifier(self) -> int:
+        return int(self.package.split(".")[1])
 
-        # Extract and validate scope, identifier, and revision
-        try:
-            scope, identifier, revision = self.package.split(".")
-            # Use object.__setattr__ because the dataclass is frozen
-            object.__setattr__(self, "scope", scope)
-            object.__setattr__(self, "identifier", int(identifier))
-            object.__setattr__(self, "revision", int(revision))
-        except (ValueError, AttributeError) as e:
-            raise ValueError(f"Invalid package format '{self.package}': {e}")
+    @computed_field
+    @property
+    def revision(self) -> int:
+        return int(self.package.split(".")[2])
 
     def __str__(self):
         return f"Package={self.package}, Timestamp={self.timestamp}, Owner={self.owner}, DOI={self.doi}"
