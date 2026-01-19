@@ -16,7 +16,7 @@ import urllib.parse
 from typing import Any, Sequence
 
 import daiquiri
-from sqlalchemy import create_engine, text, Row
+from sqlalchemy import create_engine, text, Row, Engine
 
 from gmn_adapter.config import Config
 
@@ -25,12 +25,9 @@ logger = daiquiri.getLogger(__name__)
 
 class ResourceRegistry:
 
-    def __init__(self):
+    def __init__(self, pasta_db_engine: Engine = None):
 
-        conn_str = (f"{Config.DB_DRIVER}://"
-                    f"{Config.DB_USER}:{urllib.parse.quote_plus(Config.DB_PW)}@"
-                    f"{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB}")
-        self._engine = create_engine(conn_str)
+        self._engine = pasta_db_engine
 
     def get_from_date_created(self, scope: str, date_created: str, limit: int=None) -> Sequence[Row[Any]]:
         """
