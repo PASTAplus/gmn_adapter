@@ -29,7 +29,9 @@ logger = daiquiri.getLogger(__name__)
 # Constants derived from tests/data/adapter_queue.csv
 QUEUE_COUNT = 1099
 HEAD_PID = "knb-lter-arc.1008.8"
-LAST_DATETIME = datetime(2025, 7, 23, 20, 30, 53, 241000)
+TAIL_PID = "knb-lter-cap.727.1"
+NEWEST_PID = "knb-lter-cap.653.3"
+NEWEST_DATETIME = datetime(2025, 7, 23, 20, 30, 53, 241000)
 EVENT_PID ="knb-lter-gce.101.42"
 EVENT_DATETIME = datetime(2019, 10, 28, 14, 25, 24, 496000)
 EVENT_OWNER = "EDI-abdb1ad3e4f1715fb1994b49e15a4c7d40b98ae6"
@@ -99,10 +101,18 @@ def test_get_head(queue_manager):
     assert head.package == HEAD_PID
 
 
-def test_get_last_datetime(queue_manager):
-    """Test that the last event datetime can be retrieved."""
-    last_datetime = queue_manager.get_last_datetime()
-    assert last_datetime == LAST_DATETIME
+def test_get_tail(queue_manager):
+    """Test that the queue tail can be retrieved."""
+    tail = queue_manager.get_tail()
+    assert tail.package == TAIL_PID
+
+
+def test_get_newest_event(queue_manager):
+    """Test that the newest event can be retrieved."""
+    newest_event = queue_manager.get_newest_event()
+    assert newest_event.package == NEWEST_PID
+    newest_event_datetime = newest_event.datetime
+    assert newest_event_datetime == NEWEST_DATETIME
 
 
 def  test_get_predecessor(queue_manager):
