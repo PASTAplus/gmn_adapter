@@ -21,6 +21,9 @@ import daiquiri
 
 from gmn_adapter.config import Config
 from gmn_adapter.models.adapter.adapter_db import QueueManager
+from gmn_adapter.models.pasta.package import Package
+from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
+from gmn_adapter.syncing.synchronize import synchronize_to_gmn
 
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
@@ -29,7 +32,7 @@ LOGFILE = CWD + "/sync_manager.log"
 daiquiri.setup(
     level=logging.INFO,
     outputs=(
-        daiquiri.output.Stream(sys.stderr, level=logging.WARNING),
+        daiquiri.output.Stream(sys.stderr, level=logging.ERROR),
         daiquiri.output.File(LOGFILE, level=logging.INFO),
     ),
 )
@@ -43,15 +46,36 @@ def sync_manager(verbose: int, version: bool) -> int:
         print(Config.VERSION.read_text("utf-8"))
         return 0
 
+    pasta_db_engine = get_pasta_db_engine()
     queue_manager = QueueManager(Config.QUEUE)
-    head = queue_manager.get_head()
+    queue_manager.set_all_clean()  # Mark all queued packages as clean for GMN synchronization inspection.
+    head = queue_manager.get_head(clean=True)
     while head:
-        package = str(head.package)
-        logger.info(f"Syncing: {package}")
+        pid = str(head.package)
+        package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
         if verbose > 0:
-            print(f"Syncing: {package}")
-        queue_manager.dequeue(package)
-        head = queue_manager.get_head()
+            print(f"Synchronizing package {package.pid}")
+        logger.info(f"Synchronizing package {package.pid}")
+        if package.is_gmn_candidate:
+            try:
+                synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine)
+            except RuntimeError as e:
+                if verbose > 0:
+                    print(f"Error synchronizing package {package.pid}")
+                logger.error(f"Error synchronizing package {package.pid}: {e}")
+                queue_manager.set_dirty(package=pid)
+            else:
+                if verbose > 0:
+                    print(f"Package {package.pid} successfully synchronized to GMN.")
+                logger.info(f"Package {package.pid} successfully synchronized to GMN.")
+                queue_manager.dequeue(package.pid)
+        else:
+            if verbose > 0:
+                print(f"Package {package.pid} is not a GMN candidate - skipping.")
+            logger.warning(f"Package {package.pid} is not a GMN candidate - skipping.")
+            queue_manager.set_dirty(package=pid)
+
+        head = queue_manager.get_head(clean=True)
 
     return 0
 
