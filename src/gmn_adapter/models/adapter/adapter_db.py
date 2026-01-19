@@ -64,10 +64,11 @@ class QueueManager(object):
     """Queue management for the adapter queue."""
 
     def __init__(self, queue: str=Config.QUEUE):
-        """Initialize a queue manager backed by an SQLite database.
+        """
+        Initialize a queue manager backed by an SQLite database.
 
         Args:
-            queue: Path to the SQLite database file or ":memory:" for in-memory database.
+            queue: Path to the SQLite database file or ':memory:' for in-memory database.
         """
         self.queue = queue
         db = "sqlite+pysqlite:///" + self.queue
@@ -173,8 +174,21 @@ class QueueManager(object):
             .first()
         )
 
-    def get_last_datetime(self) -> datetime:
-        """Return the datetime of the most recent queue entry.
+    def get_tail(self) -> type[Queue] | None:
+        """Return the newest non-dequeued event record.
+
+        Returns:
+            Query: Newest non-dequeued event record, or None if no valid records exist.
+        """
+        return (
+            self.session.query(Queue)
+            .filter(Queue.dequeued == False)
+            .order_by(desc(Queue.datetime))
+            .first()
+        )
+
+    def get_newest_event_datetime(self) -> datetime:
+        """Return the datetime of the most recent queued event regardless of dequeued status.
 
         Returns:
             datetime.datetime: Datetime of the last queue entry, or `None` if empty.
@@ -184,8 +198,8 @@ class QueueManager(object):
                  .first()
                  .datetime)
 
-    def get_last_event(self) -> type[Queue] | None:
-        """Return the most recent queue entry.
+    def get_newest_event(self) -> type[Queue] | None:
+        """Return the most recent queued event regardless of dequeued status.
 
         Returns:
             Queue: The most recent queue entry, or `None` if empty.
