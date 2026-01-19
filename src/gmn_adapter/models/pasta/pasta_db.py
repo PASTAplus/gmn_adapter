@@ -28,7 +28,7 @@ def get_pasta_db_engine() -> Engine:
     Creates and returns a database engine for the PASTA database.
 
     Returns:
-        Engine: A SQLAlchemy Engine instance connected to the specified PASSTA database.
+        Engine: A SQLAlchemy Engine instance connected to the specified PASTA database.
     """
     conn_str = (f"{Config.DB_DRIVER}://"
                 f"{Config.DB_USER}:{urllib.parse.quote_plus(Config.DB_PW)}@"
