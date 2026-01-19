@@ -85,11 +85,11 @@ class Package:
         Throws: ValueError, GMNAdapterDataPackageNotFound
         """
         try:
-            self.scope, self.identifier, self.revision = pid.split(".")
-            if len(self.scope) == 0: raise ValueError(f"Scope cannot be empty: {pid}")
-            if len(self.identifier) == 0 or not self.identifier.isdigit():
+            self._scope, self._identifier, self._revision = pid.split(".")
+            if len(self._scope) == 0: raise ValueError(f"Scope cannot be empty: {pid}")
+            if len(self._identifier) == 0 or not self._identifier.isdigit():
                 raise ValueError(f"Identifier must be a positive integer: {pid}")
-            if len(self.revision) == 0 or not self.revision.isdigit():
+            if len(self._revision) == 0 or not self._revision.isdigit():
                 raise ValueError(f"Revision must be a positive integer: {pid}")
         except ValueError as e:
             msg = f"Invalid PID format: {pid}"
@@ -97,15 +97,47 @@ class Package:
             raise ValueError(msg) from e
 
         resource_registry = ResourceRegistry()
-        self.pid = pid
+        self._pid = pid
         try:
-            self.resource_ids = _get_package_resource_ids(resource_registry, self.scope, self.identifier, self.revision)
+            self._resource_ids = _get_package_resource_ids(resource_registry, self._scope, self._identifier, self._revision)
         except GMNAdapterDataPackageResourcesNotFound as e:
             msg = f"Data package not found: {pid}"
             raise GMNAdapterDataPackageNotFound(msg) from e
-        self.doi = resource_registry.get_package_doi(self.scope, self.identifier, self.revision)[0][0]
-        self.date_deactivated = resource_registry.get_date_deactivated(self.scope, self.identifier, self.revision)[0][0]
-        self.is_gmn_candidate = self._is_gmn_candidate()
+        self._doi = resource_registry.get_package_doi(self._scope, self._identifier, self._revision)[0][0]
+        self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)[0][0]
+        self._is_gmn_candidate = self._is_gmn_candidate()
+
+    @property
+    def scope(self) -> str:
+        return self._scope
+
+    @property
+    def identifier(self) -> str:
+        return self._identifier
+
+    @property
+    def revision(self) -> str:
+        return self._revision
+
+    @property
+    def pid(self) -> str:
+        return self._pid
+
+    @property
+    def resource_ids(self) -> dict:
+        return self._resource_ids
+
+    @property
+    def doi(self) -> str:
+        return self._doi
+
+    @property
+    def date_deactivated(self) -> str:
+        return self._date_deactivated
+
+    @property
+    def is_gmn_candidate(self) -> bool:
+        return self._is_gmn_candidate
 
     def _is_gmn_candidate(self) -> bool:
         """
@@ -141,6 +173,19 @@ class Package:
 
         return True
 
+    def __str__(self) -> str:
+        """
+        String representation of the Package object.
 
+        Returns:
+            str: package details
+        """
+        return (
+            f"Package PID: {self._pid}\n"
+            f"  DOI: {self._doi}\n"
+            f"  Date Deactivated: {self._date_deactivated}\n"
+            f"  Is GMN Candidate: {self._is_gmn_candidate}\n"
+            f"  Resource IDs: {self._resource_ids}"
+        )
 
 
