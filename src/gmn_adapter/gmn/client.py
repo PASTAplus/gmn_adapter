@@ -15,6 +15,7 @@ Created:
 import daiquiri
 
 import d1_client.mnclient_2_0
+import d1_common.types.exceptions as d1_exceptions
 from d1_common.types.generated.dataoneTypes_v2_0 import SystemMetadata
 
 from gmn_adapter.config import Config
@@ -45,7 +46,6 @@ class Client:
             verify_tls=Config.VERIFY_TLS
         )
 
-    # System metadata
     def get_system_metadata(self, pid: str, raw: bool = False) -> SysMeta | SystemMetadata:
         """
         Retrieve system metadata for a given PID.
@@ -63,6 +63,27 @@ class Client:
         else:
             return SysMeta.from_pyxb(system_metadata)
 
+    def object_exists(self, pid: str) -> bool:
+        """
+        Check if an object with the given PID exists.
+
+        Args:
+            pid (str): The persistent identifier (PID) of the object.
+
+        Returns:
+            bool: True if the object exists, False otherwise.
+        """
+        try:
+            self._describe(pid)
+        except d1_exceptions.NotFound as e:
+            logger.debug(f"Object {pid} does not exist: {e}")
+            exists = False
+        else:
+            exists = True
+        return exists
+
+
+
     def update_system_metadata(self, pid: str, sys_meta: SysMeta):
         """
         Update system metadata for a given PID.
@@ -79,6 +100,9 @@ class Client:
         logger.debug(system_metadata.toxml("utf-8"))
         self.client.updateSystemMetadata(pid=pid, sysmeta_pyxb=system_metadata)
 
-    # GMN member node
     def list_objects(self):
         return self.client.listObjects()
+
+    def _describe(self, pid: str):
+        return self.client.describe(pid=pid)
+
