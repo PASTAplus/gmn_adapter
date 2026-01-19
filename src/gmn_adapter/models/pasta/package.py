@@ -14,9 +14,11 @@ Created:
 """
 import daiquiri
 
+from sqlalchemy import Engine
+
 from gmn_adapter.config import Config
 from gmn_adapter.exceptions import GMNAdapterDataPackageNotFound, GMNAdapterDataPackageResourcesNotFound
-import gmn_adapter.iam.client as client
+import gmn_adapter.iam.client as iam_client
 from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
 
 
@@ -70,7 +72,7 @@ class Package:
         pid (str): PASTA PID in the format scope.identifier.revision
     """
 
-    def __init__(self, pid):
+    def __init__(self, pid: str, pasta_db_engine: Engine):
         """
         Construct relevant attributes for a PASTA data package, including
         1) package identifier
@@ -80,7 +82,8 @@ class Package:
         5) resource IDs for the package (all resources must be Public Access readable to be GMN candidate)
 
         Args:
-            pid:
+            pid (str): PASTA PID in the format scope.identifier.revision
+            pasta_db_engine (Engine): SQLAlchemy engine instance
 
         Throws: ValueError, GMNAdapterDataPackageNotFound
         """
@@ -96,7 +99,7 @@ class Package:
             logger.error(msg)
             raise ValueError(msg) from e
 
-        resource_registry = ResourceRegistry()
+        resource_registry = ResourceRegistry(pasta_db_engine=pasta_db_engine)
         self._pid = pid
         try:
             self._resource_ids = _get_package_resource_ids(resource_registry, self._scope, self._identifier, self._revision)
@@ -147,28 +150,35 @@ class Package:
             bool: True if the package is a GMN candidate, False otherwise.
         """
         if self.doi is None:
+            logger.warning(f"Package {self.pid} has no DOI. Skipping.")
             return False
 
         if self.date_deactivated is not None:
+            logger.warning(f"Package {self.pid} has been deactivated. Skipping.")
             return False
 
         data_entities = self.resource_ids[Config.DATA]
         if len(data_entities) == 0:
+            logger.warning(f"Package {self.pid} has no data entities. Skipping.")
             return False
 
-        public_token = client.get_public_token()
+        public_token = iam_client.get_public_token()
 
-        if not client.is_authorized(public_token, self.resource_ids[Config.PACKAGE], "read"):
+        if not iam_client.is_authorized(public_token, self.resource_ids[Config.PACKAGE], "read"):
+            logger.warning(f"Package {self.pid} does not have Public read access to package metadata. Skipping.")
             return False
 
-        if not client.is_authorized(public_token, self.resource_ids[Config.METADATA], "read"):
+        if not iam_client.is_authorized(public_token, self.resource_ids[Config.METADATA], "read"):
+            logger.warning(f"Package {self.pid} does not have Public read access to package metadata. Skipping.")
             return False
 
-        if not client.is_authorized(public_token, self.resource_ids[Config.REPORT], "read"):
+        if not iam_client.is_authorized(public_token, self.resource_ids[Config.REPORT], "read"):
+            logger.warning(f"Package {self.pid} does not have Public read access to package report. Skipping.")
             return False
 
         for entity in data_entities:
-            if not client.is_authorized(public_token, entity, "read"):
+            if not iam_client.is_authorized(public_token, entity, "read"):
+                logger.warning(f"Package {self.pid} does not have Public read access to data entity {entity}. Skipping.")
                 return False
 
         return True
@@ -180,12 +190,20 @@ class Package:
         Returns:
             str: package details
         """
-        return (
-            f"Package PID: {self._pid}\n"
+        resources = ""
+        for resource_type, resource_id in self._resource_ids.items():
+            resources += f"    {resource_type}: {resource_id}\n"
+
+        package_details = (
+            f"Package details:\n"
+            f"  PID: {self._pid}\n"
             f"  DOI: {self._doi}\n"
             f"  Date Deactivated: {self._date_deactivated}\n"
             f"  Is GMN Candidate: {self._is_gmn_candidate}\n"
-            f"  Resource IDs: {self._resource_ids}"
+            f"  Resource IDs:\n"
+            f"{resources}"
         )
+
+        return package_details
 
 
