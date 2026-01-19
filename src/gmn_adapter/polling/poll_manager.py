@@ -47,12 +47,12 @@ def poll_manager(
 ) -> int:
     """Poll the PASTA data package manager for new resources."""
 
-    if scope not in ["EDI", "LTER"]:
-        raise ValueError(f"Invalid scope: {scope}")
-
     if version:
         print(Config.VERSION.read_text("utf-8"))
         return 0
+
+    if scope not in ["EDI", "LTER"]:
+        raise ValueError(f"Invalid scope: {scope}")
 
     if bootstrap:
         timestamp = Config.TIMESTAMP
@@ -61,7 +61,8 @@ def poll_manager(
     queue_manager = QueueManager(Config.QUEUE)
 
     if not timestamp:
-        timestamp = (queue_manager.get_last_datetime()).isoformat()
+        newest_event = queue_manager.get_newest_event()
+        timestamp = newest_event.datetime.isoformat()
 
     resource_registry = ResourceRegistry()
     resources = resource_registry.get_from_date_created(scope=scope, date_created=timestamp, limit=limit)
@@ -76,8 +77,9 @@ def poll_manager(
             if verbose > 0:
                 print(f"Package: {package}, Timestamp: {timestamp}, DOI: {doi}, Owner: {owner}")
             queue_manager.enqueue(event)
-        timestamp = (queue_manager.get_last_datetime()).isoformat()
-        resources = resource_registry.get_from_date_created(timestamp, limit=limit)
+        newest_event = queue_manager.get_newest_event()
+        timestamp = newest_event.datetime.isoformat()
+        resources = resource_registry.get_from_date_created(scope=scope, date_created=timestamp, limit=limit)
     else:
         logger.info(f"No new resources created after: {timestamp}.")
         if verbose > 0:
