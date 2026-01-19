@@ -39,7 +39,7 @@ EVENT_DOI = "doi:10.0311/FK2/bc7949668fe934c4d7e1e99a219a5566"
 EVENT_DEQUEUED = False
 EVENT_INVALID_PID = "icarus.1.1"
 DEQUEUED_PID = "knb-lter-cap.574.1"
-DESCENDANT = "knb-lter-hbr.84.8"
+DESCENDANT = "knb-lter-hbr.84.9"
 PREDECESSOR = "knb-lter-hbr.84.7"
 
 
@@ -113,6 +113,7 @@ def test_get_newest_event(queue_manager):
     assert newest_event.package == NEWEST_PID
     newest_event_datetime = newest_event.datetime
     assert newest_event_datetime == NEWEST_DATETIME
+    print(newest_event_datetime.isoformat())
 
 
 def  test_get_predecessor(queue_manager):
@@ -139,6 +140,36 @@ def test_is_dequeued(queue_manager):
     # Test that an active event is not dequeued
     dequeued = queue_manager.is_dequeued(HEAD_PID)
     assert not dequeued
+
+
+def test_set_dirty(queue_manager):
+    """Test that an event is marked as dirty."""
+    queue_manager.set_dirty(HEAD_PID)
+    head = queue_manager.get_head(clean=False)
+    assert head.dirty == True
+
+
+def test_set_all_clean(queue_manager):
+    """Test that all events are marked as clean."""
+    queue_manager.set_dirty(HEAD_PID)
+    head = queue_manager.get_head(clean=False)
+    assert head.dirty == True
+
+    queue_manager.set_all_clean()
+
+    pid = head.package
+    package = queue_manager.get_event(package=pid)
+    assert package.dirty == False
+
+
+def test_has_queued_ancestors(queue_manager):
+    """Test that has_queued_ancestors returns correct results."""
+    has_ancestors = queue_manager.has_queued_ancestors(DESCENDANT)
+    assert has_ancestors
+
+    has_ancestors = queue_manager.has_queued_ancestors(PREDECESSOR)
+    assert not has_ancestors
+
 
 
 
