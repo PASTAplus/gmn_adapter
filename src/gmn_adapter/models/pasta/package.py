@@ -150,35 +150,35 @@ class Package:
             bool: True if the package is a GMN candidate, False otherwise.
         """
         if self.doi is None:
-            logger.warning(f"Package {self.pid} has no DOI. Skipping.")
+            logger.warning(f"Package {self.pid} has no DOI.")
             return False
 
         if self.date_deactivated is not None:
-            logger.warning(f"Package {self.pid} has been deactivated. Skipping.")
+            logger.warning(f"Package {self.pid} has been deactivated.")
             return False
 
         data_entities = self.resource_ids[Config.DATA]
         if len(data_entities) == 0:
-            logger.warning(f"Package {self.pid} has no data entities. Skipping.")
+            logger.warning(f"Package {self.pid} has no data entities.")
             return False
 
         public_token = iam_client.get_public_token()
 
         if not iam_client.is_authorized(public_token, self.resource_ids[Config.PACKAGE], "read"):
-            logger.warning(f"Package {self.pid} does not have Public read access to package metadata. Skipping.")
+            logger.warning(f"Package {self.pid} does not have Public read access to package metadata.")
             return False
 
         if not iam_client.is_authorized(public_token, self.resource_ids[Config.METADATA], "read"):
-            logger.warning(f"Package {self.pid} does not have Public read access to package metadata. Skipping.")
+            logger.warning(f"Package {self.pid} does not have Public read access to package metadata.")
             return False
 
         if not iam_client.is_authorized(public_token, self.resource_ids[Config.REPORT], "read"):
-            logger.warning(f"Package {self.pid} does not have Public read access to package report. Skipping.")
+            logger.warning(f"Package {self.pid} does not have Public read access to package report.")
             return False
 
         for entity in data_entities:
             if not iam_client.is_authorized(public_token, entity, "read"):
-                logger.warning(f"Package {self.pid} does not have Public read access to data entity {entity}. Skipping.")
+                logger.warning(f"Package {self.pid} does not have Public read access to data entity {entity}.")
                 return False
 
         return True
