@@ -26,6 +26,7 @@ from gmn_adapter.config import Config
 from gmn_adapter.models.adapter.adapter_db import Queue, QueueManager
 from gmn_adapter.models.adapter.event import Event
 from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
+from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
 
 
 CWD = Path(".").resolve().as_posix()
@@ -90,4 +91,5 @@ def resource_registry():
     """
     Create a database connection to a PASTA resource registry.
     """
-    return ResourceRegistry()
+    pasta_db_engine = get_pasta_db_engine()
+    return ResourceRegistry(pasta_db_engine=pasta_db_engine)
