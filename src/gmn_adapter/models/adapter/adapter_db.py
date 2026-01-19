@@ -42,14 +42,15 @@ class Queue(Base):
 
     __tablename__ = "queue"
 
-    package = Column(String, primary_key=True)
-    scope = Column(String, nullable=False)
-    identifier = Column(Integer, nullable=False)
-    revision = Column(Integer, nullable=False)
-    datetime = Column(DateTime, nullable=False)
-    owner = Column(String, nullable=False)
-    doi = Column(String, nullable=True)
-    dequeued = Column(Boolean, nullable=False, default=False)
+    package = Column(String, primary_key=True)  # PASTA data package identifier
+    scope = Column(String, nullable=False)  # PASTA data package scope
+    identifier = Column(Integer, nullable=False)  # PASTA data package identifier
+    revision = Column(Integer, nullable=False)  # PASTA data package revision
+    datetime = Column(DateTime, nullable=False)  # PASTA data package create timestamp
+    owner = Column(String, nullable=False)  # PASTA data package principal owner
+    doi = Column(String, nullable=True)  # PASTA data package DOI
+    dequeued = Column(Boolean, nullable=False, default=False)  # If true, the data package has been synced to GMN
+    dirty = Column(Boolean, nullable=False, default=False)  # Dirty flag for GMN synchronization inspection
 
 
 class DuplicateQueueEntryError(Exception):
@@ -143,7 +144,7 @@ class QueueManager(object):
         """
         return self.session.query(func.count(Queue.package)).scalar()
 
-    def get_event(self, package: str=None) -> type[Queue]:
+    def get_event(self, package: str) -> type[Queue]:
         """Return the queue event record for a given package identifier.
 
         Args:
@@ -161,31 +162,59 @@ class QueueManager(object):
             .one()
         )
 
-    def get_head(self) -> type[Queue] | None:
+    def get_head(self, clean: bool=True) -> type[Queue] | None:
         """Return the oldest non-dequeued event record.
+
+        Args:
+            clean: If True, only return records with dirty=False. Defaults to True.
 
         Returns:
             Query: Oldest non-dequeued event record, or None if no valid records exist.
         """
-        return (
-            self.session.query(Queue)
-            .filter(Queue.dequeued == False)
-            .order_by(Queue.datetime)
-            .first()
-        )
+        if clean:
+            return (
+                self.session.query(Queue)
+                .filter(
+                    Queue.dequeued == False,
+                    Queue.dirty == False
+                )
+                .order_by(Queue.datetime)
+                .first()
+            )
+        else:
+            return (
+                self.session.query(Queue)
+                .filter(Queue.dequeued == False)
+                .order_by(Queue.datetime)
+                .first()
+            )
 
-    def get_tail(self) -> type[Queue] | None:
+    def get_tail(self, clean: bool=True) -> type[Queue] | None:
         """Return the newest non-dequeued event record.
+
+        Args:
+            clean: If True, only return records with dirty=False. Defaults to True.
 
         Returns:
             Query: Newest non-dequeued event record, or None if no valid records exist.
         """
-        return (
-            self.session.query(Queue)
-            .filter(Queue.dequeued == False)
-            .order_by(desc(Queue.datetime))
-            .first()
-        )
+        if clean:
+            return (
+                self.session.query(Queue)
+                .filter(
+                    Queue.dequeued == False,
+                    Queue.dirty == False
+                )
+                .order_by(desc(Queue.datetime))
+                .first()
+            )
+        else:
+            return (
+                self.session.query(Queue)
+                .filter(Queue.dequeued == False)
+                .order_by(desc(Queue.datetime))
+                .first()
+            )
 
     def get_newest_event_datetime(self) -> datetime:
         """Return the datetime of the most recent queued event regardless of dequeued status.
@@ -255,3 +284,46 @@ class QueueManager(object):
 
         return bool(event.dequeued)
 
+    def set_dirty(self, package: str) -> None:
+        """
+        Mark a package as dirty for GMN synchronization inspection.
+
+        Args:
+            package (str): The PASTA data package identifier.
+        """
+        event = (
+            self.session.query(Queue)
+            .filter(Queue.package == package)
+            .one()
+        )
+        event.dirty = True
+        self.session.commit()
+
+    def set_all_clean(self) -> None:
+        """
+        Mark all packages as clean for GMN synchronization inspection.
+        """
+        (self.session.query(Queue)
+         .filter(Queue.dequeued == False)
+         .update({Queue.dirty: False})
+         )
+        self.session.commit()
+
+    def has_queued_ancestors(self, package: str) -> bool:
+        """Return whether the specified package has any queued ancestors."""
+        scope, _identifier, _revision = package.split(".")
+        identifier = int(_identifier)
+        revision = int(_revision)
+
+        first_ancestor = (
+            self.session.query(Queue)
+            .filter(
+                Queue.scope == scope,
+                Queue.identifier == identifier,
+                Queue.revision < revision,
+                Queue.dequeued == False
+            )
+            .order_by(desc(Queue.revision))
+            .first()
+        )
+        return first_ancestor is not None
