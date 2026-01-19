@@ -23,6 +23,7 @@ from gmn_adapter.config import Config
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.adapter.event import Event
 from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
+from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
 CWD = Path(".").resolve().as_posix()
@@ -30,7 +31,7 @@ LOGFILE = CWD + "/poll_manager.log"
 daiquiri.setup(
     level=logging.INFO,
     outputs=(
-        daiquiri.output.Stream(sys.stderr, level=logging.WARNING),
+        daiquiri.output.Stream(sys.stderr, level=logging.ERROR),
         daiquiri.output.File(LOGFILE, level=logging.INFO),
     ),
 )
@@ -64,7 +65,8 @@ def poll_manager(
         newest_event = queue_manager.get_newest_event()
         timestamp = newest_event.datetime.isoformat()
 
-    resource_registry = ResourceRegistry()
+    pasta_db_engine = get_pasta_db_engine()
+    resource_registry = ResourceRegistry(pasta_db_engine=pasta_db_engine)
     resources = resource_registry.get_from_date_created(scope=scope, date_created=timestamp, limit=limit)
     while resources:
         for resource in resources:
@@ -73,17 +75,17 @@ def poll_manager(
             doi = resource[2]
             owner = resource[3]
             event = Event(package=package, timestamp=timestamp, owner=owner, doi=doi)
-            logger.info(f"Enqueue: {event}")
             if verbose > 0:
-                print(f"Package: {package}, Timestamp: {timestamp}, DOI: {doi}, Owner: {owner}")
+                print(f"Enqueueing  {event}")
+            logger.info(f"Enqueueing  {event}")
             queue_manager.enqueue(event)
         newest_event = queue_manager.get_newest_event()
         timestamp = newest_event.datetime.isoformat()
         resources = resource_registry.get_from_date_created(scope=scope, date_created=timestamp, limit=limit)
     else:
-        logger.info(f"No new resources created after: {timestamp}.")
+        logger.info(f"No new resources created after {timestamp}.")
         if verbose > 0:
-            print(f"No new resources created after: {timestamp}.")
+            print(f"No new resources created after {timestamp}.")
 
     return 0
 
