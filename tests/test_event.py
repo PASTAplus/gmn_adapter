@@ -44,6 +44,9 @@ def test_event():
     assert event.timestamp == TIMESTAMP
     assert event.owner == OWNER
     assert event.doi == DOI
+    assert event.scope == SCOPE
+    assert event.identifier == IDENTIFIER
+    assert event.revision == REVISION
 
 
 def test_bad_package():
