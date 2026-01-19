@@ -14,6 +14,7 @@ Created:
 """
 from datetime import datetime
 
+import d1_common.types.exceptions
 import daiquiri
 
 from gmn_adapter.gmn.client import Client
@@ -78,3 +79,17 @@ def test_list_objects():
     assert objects is not None
     for info in objects.objectInfo:
         print(info.identifier.value())
+
+
+def test_describe():
+    pid = "https://pasta.lternet.edu/package/metadata/eml/edi/2033/1"
+    client = Client("EDI")
+    try:
+        describe = client._describe(pid)
+    except d1_common.types.exceptions.NotFound as e:
+        logger.error(e)
+    else:
+        assert describe is not None
+        print("\n")
+        for key, value in describe.items():
+            print(f"{key}: {value}")
