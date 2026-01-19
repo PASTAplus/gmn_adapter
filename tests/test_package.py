@@ -15,13 +15,14 @@ Created:
 import daiquiri
 
 from gmn_adapter.models.pasta.package import Package
-
+from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
 
 logger = daiquiri.getLogger(__name__)
 
 
 def test_package():
-    package = Package("knb-lter-nin.1.2")
+    pasta_db_engine = get_pasta_db_engine()
+    package = Package(pid="knb-lter-nin.1.2", pasta_db_engine=pasta_db_engine)
     assert package is not None
 
     print("\n")
