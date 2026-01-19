@@ -57,6 +57,7 @@ def queue_manager():
             row["revision"] = int(row["revision"])
             row["datetime"] = datetime.fromisoformat(row["datetime"])
             row["dequeued"] = bool(int(row["dequeued"]))
+            row["dirty"] = bool(int(row["dirty"]))
             data.append(row)
 
     qm = QueueManager(":memory:")
