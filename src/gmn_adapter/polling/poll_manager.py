@@ -101,7 +101,7 @@ help_version = "Output GMN adapter version and exit."
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--bootstrap", is_flag=True, default=False, help=help_bootstrap)
 @click.option("--limit", type=int, default=100, help=help_limit)
-@click.option("--scope", type=str, help=help_scope)
+@click.option("--scope", type=str, default=Config.GMN_NODE, help=help_scope)
 @click.option("--timestamp",type=str, help=help_timestamp)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, help=help_version)
