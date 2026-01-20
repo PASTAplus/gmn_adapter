@@ -20,15 +20,16 @@ import click
 import daiquiri
 
 from gmn_adapter.config import Config
+from gmn_adapter.lock import Lock
 from gmn_adapter.exceptions import GMNAdapterDataPackageExists
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
 from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
-from gmn_adapter.syncing.synchronize import synchronize_to_gmn
+from gmn_adapter.cli.syncing.synchronize import synchronize_to_gmn
 
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
-CWD = Path(".").resolve().as_posix()
+CWD = Path("").resolve().as_posix()
 LOGFILE = CWD + "/sync_manager.log"
 daiquiri.setup(
     level=logging.INFO,
@@ -40,12 +41,20 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
-def sync_manager(verbose: int, version: bool) -> int:
+def sync_manager(lock_file: str, verbose: int, version: bool) -> int:
     """Manage synchronization tasks to the GMN."""
 
     if version:
         print(Config.VERSION.read_text("utf-8"))
         return 0
+
+    lock = Lock(lock_file)
+    if lock.locked:
+        logger.error('Lock file {} exists, exiting...'.format(lock.lock_file))
+        return 1
+    else:
+        lock.acquire()
+        logger.warning('Lock file {} acquired'.format(lock.lock_file))
 
     pasta_db_engine = get_pasta_db_engine()
     queue_manager = QueueManager(Config.QUEUE)
@@ -83,24 +92,29 @@ def sync_manager(verbose: int, version: bool) -> int:
 
         head = queue_manager.get_head(clean=True)
 
+    lock.release()
+    logger.warning('Lock file {} released'.format(lock.lock_file))
+
     return 0
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+help_lock = "Path to lock file (default /tmp/sync_manager.lock)."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
 help_version = "Output GMN adapter version and exit."
 
 @click.command(context_settings=CONTEXT_SETTINGS)
+@click.option("-l", "--lock", type=str, default="/tmp/sync_manager.lock", help=help_lock)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, help=help_version)
-def cli(verbose: int, version: bool):
+def cli(lock: str, verbose: int, version: bool):
     """CLI wrapper for the sync_manager function.\n
 
     The sync_manager function manages synchronization of data packages to the GMN based on the
     entries of the adapter queue database.
 
     """
-    return sync_manager(verbose, version)
+    return sync_manager(lock_file=lock, verbose=verbose, version=version)
 
 
 if __name__ == "__main__":
