@@ -76,14 +76,15 @@ def update(predecessor: Package, package: Package) -> None:
     pass
 
 
-def synchronize_to_gmn(package: Package, queue_manager: QueueManager, pasta_db_engine: Engine) -> None:
+def synchronize_to_gmn(package: Package, queue_manager: QueueManager, pasta_db_engine: Engine, dryrun: bool=True) -> None:
     """
     Synchronize the PASTA data package with GMN.
 
     Args:
         package (Package): PASTA data package to synchronize with GMN.
         queue_manager (QueueManager): Adapter queue manager.
-        pasta_db_engine (Engine): SQLAlchemy engine instance of the PASTA database.:
+        pasta_db_engine (Engine): SQLAlchemy engine instance of the PASTA database.
+        dryrun (bool): If True, perform a dry run without making changes to GMN.
 
     Returns:
         None
@@ -92,7 +93,7 @@ def synchronize_to_gmn(package: Package, queue_manager: QueueManager, pasta_db_e
         RuntimeError: If the package has a queued ancestor, or if a partial data package exists in GMN.
         GMNAdapterDataPackageExists: If the complete data package exists in GMN.
     """
-    exists = exists_in_gmn(package=package)  # Raises RuntimeError if a partial data package exists in GMN.
+    exists = exists_in_gmn(package=package)  # Raises RuntimeError only if a partial data package exists in GMN.
     if queue_manager.has_queued_ancestors(package.pid):
         # Ancestor package(s) must be synchronized first.
         raise RuntimeError(f"Package {package.pid} has a queued ancestor")
@@ -103,7 +104,9 @@ def synchronize_to_gmn(package: Package, queue_manager: QueueManager, pasta_db_e
             predecessor_pid = str(predecessor.package)
             predecessor = Package(pid=predecessor_pid, pasta_db_engine=pasta_db_engine)
             logger.info(f"Updating packages ({predecessor.pid}, {package.pid})")
-            update(predecessor, package)
+            if not dryrun:
+                update(predecessor, package)
         else:
             logger.info(f"Creating package {package.pid}")
-            create(package)
+            if not dryrun:
+                create(package)
