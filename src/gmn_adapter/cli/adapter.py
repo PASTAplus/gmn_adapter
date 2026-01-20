@@ -20,7 +20,7 @@ import click
 import daiquiri
 
 from gmn_adapter.config import Config
-from gmn_adapter.gmn.cli.sysmeta import sysmeta
+from gmn_adapter.cli.sysmeta import sysmeta
 
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
