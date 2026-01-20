@@ -37,6 +37,7 @@ class Config:
     TIMESTAMP = "2013-01-01 00:00:00"
 
     # GMN configuration
+    GMN_NODE = "GMN_NODE"
     GMN_USER = "GMN_USER"
     GMN_PASSWD = "GMN_PASSWD"
     GMN_EDI_CERT_PATH = "GMN_EDI_CERT_PATH"
