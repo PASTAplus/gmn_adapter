@@ -28,3 +28,8 @@ class GMNAdapterDataPackageResourcesNotFound(GMNAdapterError):
 
 class GMNAdapterDataPackageNotFound(GMNAdapterError):
     pass
+
+
+class GMNAdapterDataPackageExists(GMNAdapterError):
+    pass
+
