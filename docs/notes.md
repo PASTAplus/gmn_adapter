@@ -87,4 +87,8 @@ def save_sysmeta_cache(sysmeta: SysMeta, filepath: str):
 
 ```
 
-20260110-20:36 -- The first step in adding a new data package to GMN is to determine if all resources are "public" readable. To achieve this criterion, we need to use IAM-lib and call "isAuthorized" for each resource. 
+20260110-20:36 -- The first step in adding a new data package to GMN is to determine if all resources are "public" readable. To achieve this criterion, we need to use IAM-lib and call "isAuthorized" for each resource.
+
+20260118-21:26 -- Testing if package is GMN candidate, but what to do if it is not? can dequeue, but then we enter into an infinite loop. Maybe add a flag to the queue table to indicate that the package has been tested at present, but needs to be re-tested later.
+
+20260118-21:27 -- Running a test in the sync_manager resulted in a package-d resource_registry database locked: remaining connection slots are reserved for non-replication superuser connections. This is because each new Package class that is created uses a new connection. Need to either explicitly close the connection or use a context manager.
