@@ -15,10 +15,9 @@ Created:
 import daiquiri
 import pytest
 
-from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
 from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
-from gmn_adapter.syncing.synchronize import synchronize_to_gmn
+from gmn_adapter.cli.syncing.synchronize import synchronize_to_gmn
 
 logger = daiquiri.getLogger(__name__)
 
@@ -28,24 +27,24 @@ PACKAGE = "knb-lter-hbr.84.8"
 PREDECESSOR = "knb-lter-hbr.84.7"
 
 
-def test_synchronize_create(queue_manager):
+def test_synchronize_create(queue_manager, config):
     """Test that a new package is created in GMN."""
-    pasta_db_engine = get_pasta_db_engine()
+    pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     predecessor = Package(PREDECESSOR, pasta_db_engine)
-    synchronize_to_gmn(package=predecessor, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine)
+    synchronize_to_gmn(package=predecessor, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine, dryrun=True)
 
 
-def test_synchronize_update(queue_manager):
+def test_synchronize_update(queue_manager, config):
     """Test that an existing package is updated in GMN."""
     queue_manager.dequeue(PREDECESSOR)
-    pasta_db_engine = get_pasta_db_engine()
+    pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     package = Package(PACKAGE, pasta_db_engine)
-    synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine)
+    synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine, dryrun=True)
 
 
-def test_synchronize_runtime_error(queue_manager):
+def test_synchronize_runtime_error(queue_manager, config):
     """Test that a RuntimeError is raised when attempting to synchronize a package that has queued predecessors."""
-    pasta_db_engine = get_pasta_db_engine()
+    pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     package = Package(DESCENDANT, pasta_db_engine)
     with pytest.raises(RuntimeError):
-        synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine)
+        synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine, dryrun=True)
