@@ -42,6 +42,14 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
+@pytest.fixture(scope="session")
+def config():
+    return {
+        "db_host": "localhost",
+        "db_port": "54321",
+    }
+
+
 @pytest.fixture(scope="function")
 def queue_manager():
     """
