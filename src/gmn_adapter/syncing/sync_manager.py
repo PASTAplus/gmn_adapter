@@ -20,6 +20,7 @@ import click
 import daiquiri
 
 from gmn_adapter.config import Config
+from gmn_adapter.exceptions import GMNAdapterDataPackageExists
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
 from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
@@ -64,6 +65,11 @@ def sync_manager(verbose: int, version: bool) -> int:
                     print(f"Error synchronizing package {package.pid}")
                 logger.error(f"Error synchronizing package {package.pid}: {e}")
                 queue_manager.set_dirty(package=pid)
+            except GMNAdapterDataPackageExists as e:
+                if verbose > 0:
+                    print(f"Package {package.pid} already exists in GMN.")
+                logger.info(f"Package {package.pid} already exists in GMN.")
+                queue_manager.dequeue(package.pid)
             else:
                 if verbose > 0:
                     print(f"Package {package.pid} successfully synchronized to GMN.")
