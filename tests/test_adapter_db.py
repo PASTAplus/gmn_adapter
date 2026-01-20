@@ -40,6 +40,7 @@ EVENT_DEQUEUED = False
 EVENT_INVALID_PID = "icarus.1.1"
 DEQUEUED_PID = "knb-lter-cap.574.1"
 DESCENDANT = "knb-lter-hbr.84.9"
+PACKAGE = "knb-lter-hbr.84.8"
 PREDECESSOR = "knb-lter-hbr.84.7"
 
 
@@ -67,7 +68,7 @@ def test_delete_queue(queue_manager):
 def test_enqueue(queue_manager, event):
     """Test that events can be enqueued into the adapter queue."""
     queue_manager.enqueue(event)
-    last_event = queue_manager.get_last_event()
+    last_event = queue_manager.get_newest_event()
     assert last_event.package == event.package
 
     # Test duplicate event
@@ -117,7 +118,7 @@ def test_get_newest_event(queue_manager):
 
 
 def  test_get_predecessor(queue_manager):
-    predecessor = queue_manager.get_predecessor(DESCENDANT)
+    predecessor = queue_manager.get_predecessor(PACKAGE)
     assert predecessor.package == PREDECESSOR
 
     # Test for the end of lineage
