@@ -98,9 +98,9 @@ def synchronize_to_gmn(package: Package, queue_manager: QueueManager, pasta_db_e
         # Ancestor package(s) must be synchronized first.
         raise RuntimeError(f"Package {package.pid} has a queued ancestor")
     elif exists:
-        raise GMNAdapterDataPackageExists(f"Package {package.pid} already exists in GMN.")
+        raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
     else:
-        if predecessor := queue_manager.get_predecessor(package=package.pid):
+        if (predecessor := queue_manager.get_predecessor(package=package.pid)) is not None:
             predecessor_pid = str(predecessor.package)
             predecessor = Package(pid=predecessor_pid, pasta_db_engine=pasta_db_engine)
             logger.info(f"Updating packages ({predecessor.pid}, {package.pid})")
