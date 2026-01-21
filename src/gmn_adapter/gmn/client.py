@@ -28,16 +28,17 @@ logger = daiquiri.getLogger(__name__)
 class Client:
     def __init__(self, node: str):
 
-        if node == "EDI":
-            base_url = Config.GMN_EDI_BASE_URL
-            crt = Config.GMN_EDI_CERT_PATH
-            key = Config.GMN_EDI_KEY_PATH
-        elif node == "LTER":
-            base_url = Config.GMN_LTER_BASE_URL
-            crt = Config.GMN_LTER_CERT_PATH
-            key = Config.GMN_LTER_KEY_PATH
-        else:
-            raise ValueError(f"Invalid node: {node}")
+        match node:
+            case "EDI":
+                base_url = Config.GMN_EDI_BASE_URL
+                crt = Config.GMN_EDI_CERT_PATH
+                key = Config.GMN_EDI_KEY_PATH
+            case "LTER":
+                base_url = Config.GMN_LTER_BASE_URL
+                crt = Config.GMN_LTER_CERT_PATH
+                key = Config.GMN_LTER_KEY_PATH
+            case _:
+                raise ValueError(f"Invalid node: {node}")
 
         self.client = d1_client.mnclient_2_0.MemberNodeClient_2_0(
             base_url=base_url,
@@ -63,6 +64,22 @@ class Client:
         else:
             return SysMeta.from_pyxb(system_metadata)
 
+    def update_system_metadata(self, pid: str, sys_meta: SysMeta):
+        """
+        Update system metadata for a given PID.
+
+        Args:
+            pid (str): The persistent identifier (PID) of the object.
+            sys_meta (SysMeta): The system metadata object.
+        """
+        # Sanitize system metadata for GMN
+        sys_meta.serial_version = None
+        sys_meta.submitter = None
+
+        system_metadata = SysMeta.to_pyxb(sys_meta)
+        logger.debug(system_metadata.toxml("utf-8"))
+        self.client.updateSystemMetadata(pid=pid, sysmeta_pyxb=system_metadata)
+
     def object_exists(self, pid: str) -> bool:
         """
         Check if an object with the given PID exists.
@@ -82,23 +99,14 @@ class Client:
             exists = True
         return exists
 
+    def create_object(self, pid: str, data: bytes):
+        pass
 
+    def update_object(self, pid: str, data: bytes):
+        pass
 
-    def update_system_metadata(self, pid: str, sys_meta: SysMeta):
-        """
-        Update system metadata for a given PID.
-
-        Args:
-            pid (str): The persistent identifier (PID) of the object.
-            sys_meta (SysMeta): The system metadata object.
-        """
-        # Sanitize system metadata for GMN
-        sys_meta.serial_version = None
-        sys_meta.submitter = None
-
-        system_metadata = SysMeta.to_pyxb(sys_meta)
-        logger.debug(system_metadata.toxml("utf-8"))
-        self.client.updateSystemMetadata(pid=pid, sysmeta_pyxb=system_metadata)
+    def delete_object(self, pid: str):
+        pass
 
     def list_objects(self):
         return self.client.listObjects()
