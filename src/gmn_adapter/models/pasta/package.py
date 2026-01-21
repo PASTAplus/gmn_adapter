@@ -41,7 +41,7 @@ def _get_package_resource_ids(resource_registry: ResourceRegistry, scope: str, i
     """
     rids = resource_registry.get_resource_ids(scope, identifier, revision)
     if len(rids) == 0:
-        msg = f"No data package resources found: {scope}.{identifier}.{revision}"
+        msg = f"No data package resources for \"{scope}.{identifier}.{revision}\" were found on PASTA."
         raise GMNAdapterDataPackageResourcesNotFound(msg)
 
     resource_ids = {}
@@ -104,7 +104,7 @@ class Package:
         try:
             self._resource_ids = _get_package_resource_ids(resource_registry, self._scope, self._identifier, self._revision)
         except GMNAdapterDataPackageResourcesNotFound as e:
-            msg = f"Data package not found: {pid}"
+            msg = f"Data package \"{pid}\" was not found on PASTA."
             raise GMNAdapterDataPackageNotFound(msg) from e
         self._doi = resource_registry.get_package_doi(self._scope, self._identifier, self._revision)[0][0]
         self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)[0][0]
