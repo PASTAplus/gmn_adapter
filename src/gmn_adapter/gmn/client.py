@@ -12,6 +12,8 @@ Author:
 Created:
     2025-12-29
 """
+from io import BytesIO
+
 import daiquiri
 
 import d1_client.mnclient_2_0
@@ -99,10 +101,24 @@ class Client:
             exists = True
         return exists
 
-    def create_object(self, pid: str, data: bytes):
-        pass
+    def create_object(self, pid: str, data: bytes, sys_meta: SysMeta, pass_through_url: str = None) -> None:
+        """
+        Create a GMN object with the given PID.
 
-    def update_object(self, pid: str, data: bytes):
+        Args:
+            pid (str): The persistent identifier (PID) of the object.
+            data (bytes): The data to create an object with.
+            sys_meta (SysMeta): The system metadata object.
+            pass_through_url (str, optional): The url to the PASTA data entity. Defaults to None.
+        """
+        self.client.create(
+            pid=pid,
+            obj=BytesIO(data),
+            sysmeta_pyxb=sys_meta,
+            vendorSpecific=pass_through_url
+        )
+
+    def update_object(self, pid: str, data: bytes, predecessor_pid: str, sys_meta: SysMeta, pass_through_url: str = None):
         pass
 
     def delete_object(self, pid: str):
