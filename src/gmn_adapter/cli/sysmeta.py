@@ -16,6 +16,7 @@ import sys
 
 import click
 import daiquiri
+import d1_common.types.exceptions as d1_exceptions
 
 from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.dataone.sysmeta import SysMeta
@@ -45,11 +46,12 @@ def sysmeta(ctx, mn: str, pid: str, full: bool, update: str, verify: bool):
         sys.stderr.write(f"Invalid MN identifier: {mn}. Must be either 'EDI' or 'LTER'.")
         exit(1)
 
+    # Test to exclude any JSON field that contains a null (None) value
     exclude_none = True
     if full:
         exclude_none = False
 
-    client = Client(mn)
+    gmn_client = Client(mn)
 
     # Update system metadata from the JSON file, then exit.
     if update:
@@ -60,15 +62,29 @@ def sysmeta(ctx, mn: str, pid: str, full: bool, update: str, verify: bool):
         click.confirm("Update system metadata?", abort=True)
         click.echo(f"Updating system metadata for \"{mn}: {pid}\".")
         logger.info(f"Updating system metadata for \"{mn}: {pid}\".")
-        client.update_system_metadata(pid, sys_meta)
+        try:
+            gmn_client.update_system_metadata(pid, sys_meta)
+        except d1_exceptions.NotFound as e:
+            msg = f"System metadata not found for \"{pid}\" on \"{mn}\"."
+            print(msg)
+            logger.info(msg)
+            exit(1)
+
         if verify:
-            sys_meta: SysMeta = client.get_system_metadata(pid)
+            sys_meta: SysMeta = gmn_client.get_system_metadata(pid)
             print("\n")
             print(sys_meta.model_dump_json(indent=4, exclude_none=exclude_none))
         exit(0)
 
     # Read and display system metadata, then exit.
-    sys_meta: SysMeta = client.get_system_metadata(pid)
+    try:
+        sys_meta: SysMeta = gmn_client.get_system_metadata(pid)
+    except d1_exceptions.NotFound as e:
+        msg = f"System metadata not found for \"{pid}\" on \"{mn}\"."
+        print(msg)
+        logger.info(msg)
+        exit(1)
+
     logger.info(f"Dumping system metadata for \"{mn}: {pid}\".")
     print(sys_meta.model_dump_json(indent=4, exclude_none=exclude_none))
     exit(0)
