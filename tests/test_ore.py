@@ -21,7 +21,7 @@ from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
 
 def test_ore(config):
     pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
-    package = Package(pid="knb-lter-xyz.54.1", pasta_db_engine=pasta_db_engine)
+    package = Package(pid="knb-lter-nin.1.2", pasta_db_engine=pasta_db_engine)
 
     ore = get_ore(pid=package.doi, resources=package.resource_ids)
     assert ore is not None
