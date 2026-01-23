@@ -12,7 +12,7 @@ Author:
 Created:
     2025-12-28
 """
-import urllib.parse
+from datetime import datetime
 from typing import Any, Sequence
 
 import daiquiri
@@ -97,8 +97,7 @@ class ResourceRegistry:
             revision: The revision value of the data package.
 
         Returns:
-            Sequence[Row[Any]]: A sequence of rows, each containing the DOI of the matching
-            data package.
+            doi (str) or None: The DOI of the matching data package.
         """
         columns = "doi"
         select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
@@ -109,9 +108,9 @@ class ResourceRegistry:
 
         with self._engine.connect() as conn:
             result = conn.execute(text(select))
-        return result.fetchall()
+        return result.scalar_one_or_none()
 
-    def get_date_deactivated(self, scope: str, identifier: str, revision: str) -> Sequence[Row[Any]]:
+    def get_date_deactivated(self, scope: str, identifier: str, revision: str) -> datetime | None:
         """
         Retrieves the date_deactivated (or null) of a data package for a specific scope, identifier, and revision.
 
@@ -125,8 +124,7 @@ class ResourceRegistry:
             revision: The revision value of the data package.
 
         Returns:
-            Sequence[Row[Any]]: A sequence of rows containing the date_deactivated values
-            that match the provided filter criteria.
+            date_deactivated (datetime) or None: The date_deactivated that matches the provided filter criteria.
         """
         columns = "date_deactivated"
         select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
@@ -137,5 +135,5 @@ class ResourceRegistry:
 
         with self._engine.connect() as conn:
             result = conn.execute(text(select))
-        return result.fetchall()
+        return result.scalar_one_or_none()
 
