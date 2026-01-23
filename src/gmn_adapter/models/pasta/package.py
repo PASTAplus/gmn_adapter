@@ -12,6 +12,8 @@ Author:
 Created:
     2026-01-08
 """
+from datetime import datetime
+
 import daiquiri
 
 from sqlalchemy import Engine
@@ -39,7 +41,7 @@ def _get_package_resource_ids(resource_registry: ResourceRegistry, scope: str, i
     Throws: GMNAdapterDataPackageResourcesNotFound
 
     """
-    rids = resource_registry.get_resource_ids(scope, identifier, revision)
+    rids = resource_registry.get_resource_ids(scope=scope, identifier=identifier, revision=revision)
     if len(rids) == 0:
         msg = f"No data package resources for \"{scope}.{identifier}.{revision}\" were found on PASTA."
         raise GMNAdapterDataPackageResourcesNotFound(msg)
@@ -52,7 +54,6 @@ def _get_package_resource_ids(resource_registry: ResourceRegistry, scope: str, i
         resource_type = rid[1]
         if resource_type == Config.PACKAGE:
             resource_ids[Config.PACKAGE] = resource_id
-            resource_ids[Config.ORE] = resource_id + "?ore"
         elif resource_type == Config.METADATA:
             resource_ids[Config.METADATA] = resource_id
         elif resource_type == Config.REPORT:
@@ -60,6 +61,7 @@ def _get_package_resource_ids(resource_registry: ResourceRegistry, scope: str, i
         elif resource_type == Config.DATA:
             data_entities.append(resource_id)
     resource_ids[Config.DATA] = data_entities
+    resource_ids[Config.ORE] = resource_registry.get_package_doi(scope=scope, identifier=identifier, revision=revision)
 
     return resource_ids
 
@@ -87,6 +89,8 @@ class Package:
 
         Throws: ValueError, GMNAdapterDataPackageNotFound
         """
+
+        # Verify PID format
         try:
             self._scope, self._identifier, self._revision = pid.split(".")
             if len(self._scope) == 0: raise ValueError(f"Scope cannot be empty: {pid}")
@@ -106,8 +110,8 @@ class Package:
         except GMNAdapterDataPackageResourcesNotFound as e:
             msg = f"Data package \"{pid}\" was not found on PASTA."
             raise GMNAdapterDataPackageNotFound(msg) from e
-        self._doi = resource_registry.get_package_doi(self._scope, self._identifier, self._revision)[0][0]
-        self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)[0][0]
+        self._doi = self._resource_ids[Config.ORE]
+        self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)
         self._is_gmn_candidate = self._is_gmn_candidate()
 
     @property
@@ -135,7 +139,7 @@ class Package:
         return self._doi
 
     @property
-    def date_deactivated(self) -> str:
+    def date_deactivated(self) -> datetime | None:
         return self._date_deactivated
 
     @property
