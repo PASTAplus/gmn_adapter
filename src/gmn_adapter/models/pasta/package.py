@@ -21,6 +21,7 @@ from sqlalchemy import Engine
 from gmn_adapter.config import Config
 from gmn_adapter.exceptions import GMNAdapterDataPackageNotFound, GMNAdapterDataPackageResourcesNotFound
 import gmn_adapter.iam.client as iam_client
+import gmn_adapter.models.dataone.ore as ore
 from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
 
 
@@ -113,6 +114,7 @@ class Package:
         self._doi = self._resource_ids[Config.ORE]
         self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)
         self._is_gmn_candidate = self._is_gmn_candidate()
+        self._ore = ore.get_ore(pid=self._doi, resources=self._resource_ids)
 
     @property
     def scope(self) -> str:
