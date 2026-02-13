@@ -50,10 +50,6 @@ def poll_manager(
 ) -> int:
     """Poll the PASTA data package manager for new resources."""
 
-    if version:
-        print(Config.VERSION.read_text("utf-8"))
-        return 0
-
     lock = Lock(lock_file)
     if lock.locked:
         logger.error('Lock file {} exists, exiting...'.format(lock.lock_file))
@@ -105,6 +101,7 @@ def poll_manager(
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_bootstrap = "Bootstrap the adapter queue database."
+help_config = "Current configuration settings."
 help_limit = "Chunk limit on the number of polled resources per interation (default=100)."
 help_lock = "Path to lock file (default /tmp/poll_manager.lock)."
 help_scope = "PASTA based scopes to poll (EDI or LTER)."
@@ -114,28 +111,55 @@ help_version = "Output GMN adapter version and exit."
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--bootstrap", is_flag=True, default=False, help=help_bootstrap)
+@click.option("--configuration", is_flag=True, default=False, help=help_config)
 @click.option("--limit", type=int, default=100, help=help_limit)
 @click.option("-l", "--lock", type=str, default="/tmp/poll_manager.lock", help=help_lock)
 @click.option("--scope", type=str, default=Config.GMN_NODE, help=help_scope)
 @click.option("--timestamp",type=str, help=help_timestamp)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, help=help_version)
-def cli(bootstrap: bool, limit: int, lock: str, scope: str, timestamp: str, verbose: int, version: bool):
+def cli(
+    bootstrap: bool,
+    configuration: bool,
+    limit: int,
+    lock: str,
+    scope: str,
+    timestamp: str,
+    verbose: int,
+    version: bool
+):
     """CLI wrapper for the poll_manager function.\n
 
     The poll_manager function polls the PASTA data package manager for new resources and
     enqueues them in the adapter queue database. See below for options.
 
     """
-    return poll_manager(
-        bootstrap=bootstrap,
-        limit=limit,
-        lock_file=lock,
-        scope=scope,
-        timestamp=timestamp,
-        verbose=verbose,
-        version=version
-    )
+    _version = Config.VERSION.read_text("utf-8")
+    if version:
+        click.echo(f"{__name__} version: {_version}")
+        sys.exit(0)
+    elif configuration:
+        gmn_url = Config.GMN_EDI_BASE_URL if Config.GMN_NODE == "EDI" else Config.GMN_LTER_BASE_URL
+        pasta_db = f"{Config.DB_DRIVER}://{Config.DB_USER}:@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB}"
+        click.echo(f"{__name__} version: {_version}")
+        click.echo(f"GMN Node: {Config.GMN_NODE}")
+        click.echo(f"GMN URL: {gmn_url}")
+        click.echo(f"PASTA Endpoint: {Config.PASTA_SERVICE}")
+        click.echo(f"PASTA DB: {pasta_db}")
+        click.echo(f"Adapter DB: {Config.QUEUE}")
+        click.echo(f"Log file: {LOGFILE}")
+        sys.exit(0)
+    else:
+        status = poll_manager(
+            bootstrap=bootstrap,
+            limit=limit,
+            lock_file=lock,
+            scope=scope,
+            timestamp=timestamp,
+            verbose=verbose,
+            version=version
+        )
+        sys.exit(status)
 
 
 if __name__ == "__main__":

@@ -99,22 +99,41 @@ def sync_manager(lock_file: str, verbose: int, version: bool) -> int:
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+help_config = "Current configuration settings."
 help_lock = "Path to lock file (default /tmp/sync_manager.lock)."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
 help_version = "Output GMN adapter version and exit."
 
 @click.command(context_settings=CONTEXT_SETTINGS)
+@click.option("--configuration", is_flag=True, default=False, help=help_config)
 @click.option("-l", "--lock", type=str, default="/tmp/sync_manager.lock", help=help_lock)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, help=help_version)
-def cli(lock: str, verbose: int, version: bool):
+def cli(configuration: bool, lock: str, verbose: int, version: bool):
     """CLI wrapper for the sync_manager function.\n
 
     The sync_manager function manages synchronization of data packages to the GMN based on the
     entries of the adapter queue database.
 
     """
-    return sync_manager(lock_file=lock, verbose=verbose, version=version)
+    _version = Config.VERSION.read_text("utf-8")
+    if version:
+        click.echo(f"{__name__} version: {_version}")
+        sys.exit(0)
+    elif configuration:
+        gmn_url = Config.GMN_EDI_BASE_URL if Config.GMN_NODE == "EDI" else Config.GMN_LTER_BASE_URL
+        pasta_db = f"{Config.DB_DRIVER}://{Config.DB_USER}:@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB}"
+        click.echo(f"{__name__} version: {_version}")
+        click.echo(f"GMN Node: {Config.GMN_NODE}")
+        click.echo(f"GMN URL: {gmn_url}")
+        click.echo(f"PASTA Endpoint: {Config.PASTA_SERVICE}")
+        click.echo(f"PASTA DB: {pasta_db}")
+        click.echo(f"Adapter DB: {Config.QUEUE}")
+        click.echo(f"Log file: {LOGFILE}")
+        sys.exit(0)
+    else:
+        status= sync_manager(lock_file=lock, verbose=verbose, version=version)
+        sys.exit(status)
 
 
 if __name__ == "__main__":
