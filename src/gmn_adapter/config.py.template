@@ -28,6 +28,7 @@ class Config:
     ROOT_DIR = (CWD / ".." / "..").resolve()
     ASSETS_DIR = ROOT_DIR / "assets"
     CERTS_DIR = ROOT_DIR / "certs"
+    LOGS_DIR = ROOT_DIR / "logs"
     VERSION = ROOT_DIR / "src" / "gmn_adapter" / "VERSION.txt"
 
     # Adapter Queue Sqlite Database
