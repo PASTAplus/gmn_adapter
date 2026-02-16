@@ -26,10 +26,19 @@ class Config:
     # Project paths
     CWD = Path(__file__).resolve().parent
     ROOT_DIR = (CWD / ".." / "..").resolve()
-    ASSETS_DIR = ROOT_DIR / "assets"
-    CERTS_DIR = ROOT_DIR / "certs"
-    LOGS_DIR = ROOT_DIR / "logs"
     VERSION = ROOT_DIR / "src" / "gmn_adapter" / "VERSION.txt"
+
+    ASSETS_DIR = ROOT_DIR / "assets"
+    if not ASSETS_DIR.exists():
+        ASSETS_DIR.mkdir()
+
+    CERTS_DIR = ROOT_DIR / "certs"
+    if not CERTS_DIR.exists():
+        CERTS_DIR.mkdir()
+
+    LOGS_DIR = ROOT_DIR / "logs"
+    if not LOGS_DIR.exists():
+        LOGS_DIR.mkdir()
 
     # Adapter Queue Sqlite Database
     QUEUE =  ROOT_DIR / "QUEUE"
