@@ -90,23 +90,23 @@ def synchronize_to_gmn(package: Package, queue_manager: QueueManager, pasta_db_e
         None
 
     Throws:
-        RuntimeError: If the package has a queued ancestor, or if a partial data package exists in GMN.
-        GMNAdapterDataPackageExists: If the complete data package exists in GMN.
+        RuntimeError (fatal): If the package has a queued ancestor, or if a partial data package exists in GMN.
+        GMNAdapterDataPackageExists (non-fatal): If the complete data package exists in GMN.
     """
-    exists = exists_in_gmn(package=package)  # Raises RuntimeError only if a partial data package exists in GMN.
     if queue_manager.has_queued_ancestors(package.pid):
         # Ancestor package(s) must be synchronized first.
         raise RuntimeError(f"Package {package.pid} has a queued ancestor")
-    elif exists:
+
+    if exists_in_gmn(package=package):  # exists_in_gmn raises RuntimeError only if a partial data package exists in GMN.
         raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
+
+    if (predecessor := queue_manager.get_predecessor(package=package.pid)) is not None:
+        predecessor_pid = str(predecessor.package)
+        predecessor = Package(pid=predecessor_pid, pasta_db_engine=pasta_db_engine)
+        logger.info(f"Updating packages ({predecessor.pid}, {package.pid})")
+        if not dryrun:
+            update(predecessor, package)
     else:
-        if (predecessor := queue_manager.get_predecessor(package=package.pid)) is not None:
-            predecessor_pid = str(predecessor.package)
-            predecessor = Package(pid=predecessor_pid, pasta_db_engine=pasta_db_engine)
-            logger.info(f"Updating packages ({predecessor.pid}, {package.pid})")
-            if not dryrun:
-                update(predecessor, package)
-        else:
-            logger.info(f"Creating package {package.pid}")
-            if not dryrun:
-                create(package)
+        logger.info(f"Creating package {package.pid}")
+        if not dryrun:
+            create(package)
