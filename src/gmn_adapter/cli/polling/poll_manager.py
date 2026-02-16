@@ -63,12 +63,13 @@ def poll_manager(
         raise ValueError(f"Invalid scope: {scope}")
 
     if bootstrap:
-        timestamp = Config.TIMESTAMP
+        if timestamp is None:
+            timestamp = Config.TIMESTAMP
         Path(Config.QUEUE).unlink(missing_ok=True)
 
     queue_manager = QueueManager(Config.QUEUE)
 
-    if not timestamp:
+    if timestamp is None:
         newest_event = queue_manager.get_newest_event()
         timestamp = newest_event.datetime.isoformat()
 
@@ -122,7 +123,7 @@ help_version = "Output GMN adapter version and exit."
 @click.option("--limit", type=int, default=100, help=help_limit)
 @click.option("-l", "--lock", type=str, default="/tmp/poll_manager.lock", help=help_lock)
 @click.option("--scope", type=str, default=Config.GMN_NODE, help=help_scope)
-@click.option("--timestamp",type=str, help=help_timestamp)
+@click.option("--timestamp",type=str, default=None, help=help_timestamp)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, callback=print_version, expose_value=False, is_eager=True, help=help_version)
 def cli(bootstrap: bool, conf: bool, limit: int, lock: str, scope: str, timestamp: str, verbose: int,):
