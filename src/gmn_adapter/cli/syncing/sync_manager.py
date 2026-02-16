@@ -61,8 +61,8 @@ def sync_manager(lock_file: str, verbose: int) -> int:
         pid = str(queue_head.package)
         package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
         if verbose > 0:
-            print(f"Synchronizing package {package.pid}")
-        logger.info(f"Synchronizing package {package.pid}")
+            print(f"Attempting to synchronize package: {package.pid}")
+        logger.info(f"Attempting to synchronize package: {package.pid}")
         if package.is_gmn_candidate:
             try:
                 synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine)
@@ -70,8 +70,9 @@ def sync_manager(lock_file: str, verbose: int) -> int:
                 if verbose > 0:
                     print(f"Error synchronizing package {package.pid}")
                 logger.error(f"Error synchronizing package {package.pid}: {e}")
-                queue_manager.set_dirty(package=pid)
+                break  # An exceptional Exception has occurred
             except GMNAdapterDataPackageExists as e:
+                # Log message and continue loop
                 if verbose > 0:
                     print(f"Package {package.pid} already exists in GMN.")
                 logger.info(f"Package {package.pid} already exists in GMN.")
