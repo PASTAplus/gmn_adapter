@@ -56,9 +56,9 @@ def sync_manager(lock_file: str, verbose: int) -> int:
     pasta_db_engine = get_pasta_db_engine()
     queue_manager = QueueManager(Config.QUEUE)
     queue_manager.set_all_clean()  # Mark all queued packages as clean for GMN synchronization inspection.
-    head = queue_manager.get_head(clean=True)
-    while head:
-        pid = str(head.package)
+    queue_head = queue_manager.get_head(clean=True)
+    while queue_head:
+        pid = str(queue_head.package)
         package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
         if verbose > 0:
             print(f"Synchronizing package {package.pid}")
@@ -87,7 +87,7 @@ def sync_manager(lock_file: str, verbose: int) -> int:
             logger.warning(f"Package {package.pid} is not a GMN candidate - skipping.")
             queue_manager.set_dirty(package=pid)
 
-        head = queue_manager.get_head(clean=True)
+        queue_head = queue_manager.get_head(clean=True)
 
     lock.release()
     logger.warning('Lock file {} released'.format(lock.lock_file))
