@@ -23,11 +23,12 @@ import daiquiri
 from gmn_adapter.config import Config
 from gmn_adapter.cli.configuration import configuration
 from gmn_adapter.lock import Lock
-from gmn_adapter.exceptions import GMNAdapterDataPackageExists
+from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, \
+    GMNAdapterNonSynchronizedAncestor
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
 from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
-from gmn_adapter.cli.syncing.synchronize import synchronize_to_gmn
+from gmn_adapter.cli.synchronize import synchronize_to_gmn
 
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
@@ -66,11 +67,17 @@ def sync_manager(lock_file: str, verbose: int) -> int:
         if package.is_gmn_candidate:
             try:
                 synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine)
-            except RuntimeError as e:
+            except GMNAdapterNonSynchronizedAncestor as e:
                 if verbose > 0:
                     print(f"Error synchronizing package {package.pid}")
                 logger.error(f"Error synchronizing package {package.pid}: {e}")
                 break  # An exceptional Exception has occurred
+            except GMNAdapterPartialDataPackageExists as e:
+                if verbose > 0:
+                    print(f"Missing data package resources in GMN for {package.pid}:")
+                    for resource in e.missing_resources: print(f"\t{resource}")
+                logger.error(f"Error synchronizing package {package.pid}: {e}")
+                break
             except GMNAdapterDataPackageExists as e:
                 # Log message and continue loop
                 if verbose > 0:

@@ -13,11 +13,14 @@ Author:
 Created:
     2026-01-19
 """
+from enum import IntFlag
+
 import daiquiri
 from sqlalchemy import Engine
 
 from gmn_adapter.config import Config
-from gmn_adapter.exceptions import GMNAdapterDataPackageExists
+from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, \
+    GMNAdapterNonSynchronizedAncestor
 from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
@@ -26,45 +29,69 @@ from gmn_adapter.models.pasta.package import Package
 logger = daiquiri.getLogger(__name__)
 
 
-def exists_in_gmn(package: Package) -> bool:
+class packageStatus(IntFlag):
+    """Enumeration of package status flags."""
+    EMPTY = 0
+    ORE = 1
+    METADATA = 2
+    REPORT = 4
+    DATA = 8
+
+
+def exists_in_gmn(package: Package, verbose: int=0) -> bool:
     """
     Check if a data package exists in GMN.
 
     Args:
         package (Package): PASTA data package to check.
+        verbose (int): Verbosity level for logging. Default is 0.
 
     Returns:
         bool: True if all resources exist in GMN, False otherwise.
 
     Throws:
-        RuntimeError: If a partial data package exists in GMN.
+        GMNAdapterPartialDataPackageExists: If a partial data package exists in GMN.
     """
     gmn_client = Client(node=Config.GMN_NODE)
-    non_data_resource_count = 3
-    exists = 0
+
+    status = packageStatus.EMPTY
+    complete = packageStatus.ORE | packageStatus.METADATA | packageStatus.REPORT | packageStatus.DATA
+    missing_resources = []
 
     ore = package.doi
     if gmn_client.object_exists(ore):
-        exists += 1
+        status = packageStatus.ORE
+    else:
+        missing_resources.append(ore)
 
     metadata = package.resource_ids[Config.METADATA]
     if gmn_client.object_exists(metadata):
-        exists += 1
+        status = status | packageStatus.METADATA
+    else:
+        missing_resources.append(metadata)
 
     report = package.resource_ids[Config.REPORT]
     if gmn_client.object_exists(report):
-        exists += 1
-
-    for data in package.resource_ids[Config.DATA]:
-        if gmn_client.object_exists(data):
-            exists += 1
-
-    if exists == non_data_resource_count + len(package.resource_ids[Config.DATA]):
-        return True
-    elif exists > 0:
-        raise RuntimeError(f"A partial data package exists in GMN for {package.pid}.")
+        status = status | packageStatus.REPORT
     else:
+        missing_resources.append(report)
+
+    all_data = True
+    for data in package.resource_ids[Config.DATA]:
+        if not gmn_client.object_exists(data):
+            all_data = False
+            missing_resources.append(data)
+    if all_data:
+        status = status | packageStatus.DATA
+
+    if status == complete:
+        return True
+    elif status == packageStatus.EMPTY:
         return False
+    else:
+        msg = f"A partial data package exists in GMN for {package.pid}."
+        raise GMNAdapterPartialDataPackageExists(msg, missing_resources)
+
 
 def create(package: Package) -> None:
     """Create a new data package in GMN."""
@@ -90,14 +117,15 @@ def synchronize_to_gmn(package: Package, queue_manager: QueueManager, pasta_db_e
         None
 
     Throws:
-        RuntimeError (fatal): If the package has a queued ancestor, or if a partial data package exists in GMN.
-        GMNAdapterDataPackageExists (non-fatal): If the complete data package exists in GMN.
+        RuntimeError: If the package has a queued ancestor.
+        GMNAdapterPartialDataPackageExists: If a partial data package exists in GMN.
+        GMNAdapterDataPackageExists: If the complete data package exists in GMN.
     """
     if queue_manager.has_queued_ancestors(package.pid):
         # Ancestor package(s) must be synchronized first.
-        raise RuntimeError(f"Package {package.pid} has a queued ancestor")
+        raise GMNAdapterNonSynchronizedAncestor(f"Package {package.pid} has a non-synchronized ancestor")
 
-    if exists_in_gmn(package=package):  # exists_in_gmn raises RuntimeError only if a partial data package exists in GMN.
+    if exists_in_gmn(package=package):  # re-throws GMNAdapterPartialDataPackageExists
         raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
 
     if (predecessor := queue_manager.get_predecessor(package=package.pid)) is not None:
