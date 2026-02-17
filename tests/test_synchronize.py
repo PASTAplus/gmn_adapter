@@ -17,7 +17,7 @@ import pytest
 
 from gmn_adapter.models.pasta.package import Package
 from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
-from gmn_adapter.cli.syncing.synchronize import synchronize_to_gmn
+from gmn_adapter.cli.synchronize import synchronize_to_gmn
 
 logger = daiquiri.getLogger(__name__)
 
