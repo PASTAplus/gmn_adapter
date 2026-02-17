@@ -38,3 +38,7 @@ class GMNAdapterPartialDataPackageExists(GMNAdapterError):
     def __init__(self, message, missing_resources: list):
         super().__init__(message)
         self.missing_resources = missing_resources
+
+
+class GMNAdapterNonSynchronizedAncestor(GMNAdapterError):
+    pass
