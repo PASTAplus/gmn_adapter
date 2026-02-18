@@ -769,8 +769,8 @@ packages:
   requires_python: '>=3.9'
 - pypi: ./
   name: gmn-adapter
-  version: 0.0.1
-  sha256: 3283c488b46a06f52d6ee97766536ffd5ebe1a40519bedff79fff23f02b7f1dd
+  version: 0.1.0
+  sha256: 83a98a01c5b8c6349b38fda69ea72003edbb8de954966ccdac3520a1d7dd1416
   requires_dist:
   - dataone-common>=3.5.2,<4
   - dataone-libclient>=3.5.2,<4
