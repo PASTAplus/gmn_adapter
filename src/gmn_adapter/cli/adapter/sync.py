@@ -29,15 +29,17 @@ logger = daiquiri.getLogger(__name__)
 
 
 help_dryrun = "Perform dryrun synchronization of data packages to the GMN."
+help_repair = "Attempt to repair an incomplete data package in the GMN."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
 
 
 @click.command()
 @click.argument("pid", type=str)
 @click.option("--dryrun", is_flag=True, default=False, help=help_dryrun)
+@click.option("--repair", is_flag=True, default=False, help=help_repair)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.pass_context
-def sync(ctx, dryrun: bool, pid: str, verbose: int):
+def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
     """
     Synchronize a PASTA data package (PID) with the system GMN MN.
 
@@ -58,7 +60,14 @@ def sync(ctx, dryrun: bool, pid: str, verbose: int):
 
     if package.is_gmn_candidate:
         try:
-            synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine, dryrun=dryrun)
+            synchronize_to_gmn(
+                package=package,
+                queue_manager=queue_manager,
+                pasta_db_engine=pasta_db_engine,
+                repair=repair,
+                dryrun=dryrun,
+                verbose=verbose
+            )
         except GMNAdapterNonSynchronizedAncestor as e:
             if verbose > 0:
                 click.echo(f"Error synchronizing package {package.pid}")
@@ -67,7 +76,7 @@ def sync(ctx, dryrun: bool, pid: str, verbose: int):
             if verbose > 0:
                 click.echo(f"Missing data package resources in GMN for {package.pid}:")
                 for resource in e.missing_resources: click.echo(f"\t{resource}")
-            logger.error(f"Error synchronizing package {package.pid}: {e}")
+            logger.error(f"Missing data package resources in GMN for {package.pid}: {e}")
         except GMNAdapterDataPackageExists as e:
             # Log the message and continue the loop
             if verbose > 0:

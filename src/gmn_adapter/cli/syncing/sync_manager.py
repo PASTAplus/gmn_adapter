@@ -42,7 +42,7 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
-def sync_manager(dryrun: bool, verbose: int) -> int:
+def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
     """Manage synchronization tasks to the GMN."""
 
     lock = Lock(Config.SYNC_LOCK)
@@ -77,7 +77,14 @@ def sync_manager(dryrun: bool, verbose: int) -> int:
         logger.info(f"Attempting to synchronize package: {package.pid}")
         if package.is_gmn_candidate:
             try:
-                synchronize_to_gmn(package=package, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine, dryrun=dryrun)
+                synchronize_to_gmn(
+                    package=package,
+                    queue_manager=queue_manager,
+                    pasta_db_engine=pasta_db_engine,
+                    repair=repair,
+                    dryrun=dryrun,
+                    verbose=verbose
+                )
             except GMNAdapterNonSynchronizedAncestor as e:
                 if verbose > 0:
                     click.echo(f"Error synchronizing package {package.pid}")
@@ -87,8 +94,8 @@ def sync_manager(dryrun: bool, verbose: int) -> int:
                 if verbose > 0:
                     click.echo(f"Missing data package resources in GMN for {package.pid}:")
                     for resource in e.missing_resources: click.echo(f"\t{resource}")
-                logger.error(f"Error synchronizing package {package.pid}: {e}")
-                break
+                logger.error(f"Missing data package resources in GMN for {package.pid}: {e}")
+                queue_manager.set_dirty(package=pid)
             except GMNAdapterDataPackageExists as e:
                 # Log the message and continue the loop
                 if verbose > 0:
@@ -127,16 +134,17 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_conf = "Current configuration settings."
 help_dryrun = "Perform dryrun synchronization of data packages to the GMN."
-help_lock = "Path to lock file (default /tmp/sync_manager.lock)."
+help_repair = "Attempt to repair an incomplete data package in the GMN."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
 help_version = "Output GMN adapter version and exit."
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--conf", is_flag=True, default=False, help=help_conf)
 @click.option("--dryrun", is_flag=True, default=False, help=help_dryrun)
+@click.option("--repair", is_flag=True, default=False, help=help_repair)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, callback=print_version, expose_value=False, is_eager=True, help=help_version)
-def cli(conf: bool, dryrun: bool, verbose: int):
+def cli(conf: bool, dryrun: bool, repair: bool, verbose: int):
     """CLI wrapper for the sync_manager function.\n
 
     The sync_manager function manages synchronization of data packages to the GMN based on the
@@ -147,7 +155,7 @@ def cli(conf: bool, dryrun: bool, verbose: int):
         click.echo(json.dumps(configuration(), indent=4))
         sys.exit(0)
     else:
-        status= sync_manager(dryrun=dryrun, verbose=verbose)
+        status= sync_manager(dryrun=dryrun, repair=repair, verbose=verbose)
         sys.exit(status)
 
 
