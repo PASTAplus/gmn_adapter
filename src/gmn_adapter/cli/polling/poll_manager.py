@@ -30,7 +30,7 @@ from gmn_adapter.models.pasta.pasta_db import get_pasta_db_engine
 
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
-LOGFILE = Config.LOGS_DIR / f"{Path(__file__).stem}.log"
+LOGFILE = Config.LOGS_DIR / Path(__file__).with_suffix(".log").name
 daiquiri.setup(
     level=logging.INFO,
     outputs=(
@@ -41,23 +41,16 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
-def poll_manager(
-    bootstrap: bool,
-    limit: int,
-    lock_file: str,
-    scope: str,
-    timestamp: str,
-    verbose: int,
-) -> int:
+def poll_manager(bootstrap: bool, limit: int, scope: str, timestamp: str, verbose: int,) -> int:
     """Poll the PASTA data package manager for new resources."""
 
-    lock = Lock(lock_file)
+    lock = Lock(Config.POLL_LOCK)
     if lock.locked:
-        logger.error('Lock file {} exists, exiting...'.format(lock.lock_file))
-        return 1
+        logger.error(f"Lock file {lock.lock_file} exists, exiting...")
+        sys.exit(1)
     else:
         lock.acquire()
-        logger.warning('Lock file {} acquired'.format(lock.lock_file))
+        logger.warning(f"Lock file {lock.lock_file} acquired")
 
     if scope not in ["EDI", "LTER"]:
         raise ValueError(f"Invalid scope: {scope}")
@@ -84,7 +77,7 @@ def poll_manager(
             owner = resource[3]
             event = Event(package=package, timestamp=timestamp, owner=owner, doi=doi)
             if verbose > 0:
-                print(f"Enqueueing  {event}")
+                click.echo(f"Enqueueing  {event}")
             logger.info(f"Enqueueing  {event}")
             queue_manager.enqueue(event)
         newest_event = queue_manager.get_newest_event()
@@ -93,17 +86,17 @@ def poll_manager(
     else:
         logger.info(f"No new resources created after {timestamp}.")
         if verbose > 0:
-            print(f"No new resources created after {timestamp}.")
+            click.echo(f"No new resources created after {timestamp}.")
 
     lock.release()
-    logger.warning('Lock file {} released'.format(lock.lock_file))
+    logger.warning(f"Lock file {lock.lock_file} released")
 
-    return 0
+    sys.exit(0)
 
 def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> None:
     if not value or ctx.resilient_parsing:
         return
-    print(f"Version: {Config.VERSION.read_text("utf-8")}")
+    click.echo(f"Version: {Config.VERSION.read_text("utf-8")}")
     ctx.exit()
 
 
@@ -111,7 +104,6 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_bootstrap = "Bootstrap the adapter queue database."
 help_conf = "Current configuration settings."
 help_limit = "Chunk limit on the number of polled resources per interation (default=100)."
-help_lock = "Path to lock file (default /tmp/poll_manager.lock)."
 help_scope = "PASTA based scopes to poll (EDI or LTER)."
 help_timestamp = "ISO 8601 timestamp to start polling from."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
@@ -121,12 +113,11 @@ help_version = "Output GMN adapter version and exit."
 @click.option("--bootstrap", is_flag=True, default=False, help=help_bootstrap)
 @click.option("--conf", is_flag=True, default=False, help=help_conf)
 @click.option("--limit", type=int, default=100, help=help_limit)
-@click.option("-l", "--lock", type=str, default="/tmp/poll_manager.lock", help=help_lock)
 @click.option("--scope", type=str, default=Config.GMN_NODE, help=help_scope)
 @click.option("--timestamp",type=str, default=None, help=help_timestamp)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, callback=print_version, expose_value=False, is_eager=True, help=help_version)
-def cli(bootstrap: bool, conf: bool, limit: int, lock: str, scope: str, timestamp: str, verbose: int,):
+def cli(bootstrap: bool, conf: bool, limit: int, scope: str, timestamp: str, verbose: int,):
     """CLI wrapper for the poll_manager function.\n
 
     The poll_manager function polls the PASTA data package manager for new resources and
@@ -140,7 +131,6 @@ def cli(bootstrap: bool, conf: bool, limit: int, lock: str, scope: str, timestam
         status = poll_manager(
             bootstrap=bootstrap,
             limit=limit,
-            lock_file=lock,
             scope=scope,
             timestamp=timestamp,
             verbose=verbose,
