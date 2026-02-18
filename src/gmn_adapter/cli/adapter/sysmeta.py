@@ -18,6 +18,7 @@ import click
 import daiquiri
 import d1_common.types.exceptions as d1_exceptions
 
+from gmn_adapter.config import Config
 from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.dataone.sysmeta import SysMeta
 
@@ -25,66 +26,62 @@ from gmn_adapter.models.dataone.sysmeta import SysMeta
 logger = daiquiri.getLogger(__name__)
 
 
-@click.command()
-@click.argument("mn", type=str)
-@click.argument("pid", type=str)
-@click.option("-f", "--full", is_flag=True, default=False,
-              help="Display full system metadata, including empty fields.")
-@click.option("-u", "--update", type=click.Path(exists=True),
-              help="Update system metadata from JSON file.")
-@click.option("-v", "--verify", is_flag=True, default=False,
-              help="Verify system metadata has been updated successfully.")
-@click.pass_context
-def sysmeta(ctx, mn: str, pid: str, full: bool, update: str, verify: bool):
-    """
-    Retrieve and update system metadata for a given MN and PID.
+help_full = "Display full system metadata, including empty fields."
+help_update = "Update system metadata from JSON file."
+help_verify = "Verify system metadata has been updated successfully."
 
-    MN: Member Node identifier (EDI or LTER).\n
+@click.command()
+@click.argument("pid", type=str)
+@click.option("-f", "--full", is_flag=True, default=False, help=help_full)
+@click.option("-u", "--update", type=click.Path(exists=True), help=help_update,)
+@click.option("-v", "--verify", is_flag=True, default=False, help=help_verify)
+@click.pass_context
+def sysmeta(ctx, pid: str, full: bool, update: str, verify: bool):
+    """
+    Retrieve and update system metadata for the system GMN and PID.
+
     PID: Persistent Identifier (e.g., "https://pasta.lternet.edu/package/metadata/eml/edi/1/1").
     """
-    if mn not in ("EDI", "LTER"):
-        sys.stderr.write(f"Invalid MN identifier: {mn}. Must be either 'EDI' or 'LTER'.")
-        exit(1)
 
-    # Test to exclude any JSON field that contains a null (None) value
-    exclude_none = True
+    # Test to exclude any empty JSON field
+    exclude_empty = True
     if full:
-        exclude_none = False
+        exclude_empty = False
 
-    gmn_client = Client(mn)
+    gmn_client = Client(Config.GMN_NODE)
 
     # Update system metadata from the JSON file, then exit.
     if update:
         with open(update, "r") as f:
             sys_meta: SysMeta = SysMeta.model_validate_json(f.read())
-        print(sys_meta.model_dump_json(indent=4, exclude_none=exclude_none))
-        print("\n")
+        click.echo(sys_meta.model_dump_json(indent=4, exclude_none=exclude_empty))
+        click.echo("\n")
         click.confirm("Update system metadata?", abort=True)
-        click.echo(f"Updating system metadata for \"{mn}: {pid}\".")
-        logger.info(f"Updating system metadata for \"{mn}: {pid}\".")
+        click.echo(f"Updating system metadata for \"{Config.GMN_NODE}: {pid}\".")
+        logger.info(f"Updating system metadata for \"{Config.GMN_NODE}: {pid}\".")
         try:
             gmn_client.update_system_metadata(pid, sys_meta)
         except d1_exceptions.NotFound as e:
-            msg = f"System metadata not found for \"{pid}\" on \"{mn}\"."
-            print(msg)
+            msg = f"System metadata not found for \"{pid}\" on \"{Config.GMN_NODE}\"."
+            click.echo(msg)
             logger.info(msg)
-            exit(1)
+            sys.exit(1)
 
         if verify:
             sys_meta: SysMeta = gmn_client.get_system_metadata(pid)
-            print("\n")
-            print(sys_meta.model_dump_json(indent=4, exclude_none=exclude_none))
-        exit(0)
+            click.echo("\n")
+            click.echo(sys_meta.model_dump_json(indent=4, exclude_none=exclude_empty))
+        sys.exit(0)
 
     # Read and display system metadata, then exit.
     try:
         sys_meta: SysMeta = gmn_client.get_system_metadata(pid)
     except d1_exceptions.NotFound as e:
-        msg = f"System metadata not found for \"{pid}\" on \"{mn}\"."
-        print(msg)
+        msg = f"System metadata not found for \"{pid}\" on \"{exclude_empty}\"."
+        click.echo(msg)
         logger.info(msg)
-        exit(1)
+        sys.exit(1)
 
-    logger.info(f"Dumping system metadata for \"{mn}: {pid}\".")
-    print(sys_meta.model_dump_json(indent=4, exclude_none=exclude_none))
-    exit(0)
+    logger.info(f"Dumping system metadata for \"{Config.GMN_NODE}: {pid}\".")
+    click.echo(sys_meta.model_dump_json(indent=4, exclude_none=exclude_empty))
+    sys.exit(0)
