@@ -24,7 +24,7 @@ logger = daiquiri.getLogger(__name__)
 
 class Lock(object):
 
-    def __init__(self, file_name=None):
+    def __init__(self, file_name: str=None):
 
         if file_name is None:
             random_str = lambda n: ''.join([random.choice(
