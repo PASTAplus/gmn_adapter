@@ -23,14 +23,15 @@ import daiquiri
 from gmn_adapter.config import Config
 from gmn_adapter.cli.configuration import configuration
 from gmn_adapter.cli.adapter.sysmeta import sysmeta
+from gmn_adapter.cli.adapter.sync import sync
 
 
 # Set up daiquiri logging: INFO and higher to LOGFILE, WARNING and higher to STDERR
-LOGFILE = Config.LOGS_DIR / f"{Path(__file__).stem}.log"
+LOGFILE = Config.LOGS_DIR / Path(__file__).with_suffix(".log").name
 daiquiri.setup(
     level=logging.INFO,
     outputs=(
-        daiquiri.output.Stream(sys.stderr, level=logging.WARNING),
+        daiquiri.output.Stream(sys.stderr, level=logging.ERROR),
         daiquiri.output.File(LOGFILE, level=logging.INFO),
     ),
 )
@@ -44,20 +45,33 @@ def print_conf(ctx: click.Context, param: click.Parameter, value: bool) -> None:
     ctx.exit()
 
 
+def sync_irq(ctx: click.Context, param: click.Parameter, value: bool) -> None:
+    if not value or ctx.resilient_parsing:
+        return
+    # Toggle sync_manager interrupt request
+    if Config.SYNC_IRQ.exists():
+        Config.SYNC_IRQ.unlink()
+    else:
+        Config.SYNC_IRQ.touch()
+    ctx.exit()
+
+
 def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> None:
     if not value or ctx.resilient_parsing:
         return
-    print(f"Version: {Config.VERSION.read_text("utf-8")}")
+    click.echo(f"Version: {Config.VERSION.read_text("utf-8")}")
     ctx.exit()
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_conf = "Current configuration settings."
+help_sync_irq = "Toggle sync_manager interrupt request."
 help_version = "Output GMN adapter version and exit."
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("--conf", is_flag=True, default=False, callback=print_conf, expose_value=False, is_eager=True, help=help_conf)
+@click.option("--sync_irq", is_flag=True, default=False, callback=sync_irq, expose_value=False, is_eager=True, help=help_sync_irq)
 @click.option("--version", is_flag=True, default=False, callback=print_version, expose_value=False, is_eager=True, help=help_version)
 @click.pass_context
 def adapter(ctx):
@@ -68,6 +82,7 @@ def adapter(ctx):
 
 
 adapter.add_command(sysmeta)
+adapter.add_command(sync)
 
 
 if __name__ == "__main__":
