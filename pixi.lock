@@ -770,7 +770,7 @@ packages:
 - pypi: ./
   name: gmn-adapter
   version: 0.1.0
-  sha256: 83a98a01c5b8c6349b38fda69ea72003edbb8de954966ccdac3520a1d7dd1416
+  sha256: 08b48d72249c4425b13c3a7b0930eff47e7a1214acdcf902e03c674103dbd84d
   requires_dist:
   - dataone-common>=3.5.2,<4
   - dataone-libclient>=3.5.2,<4
