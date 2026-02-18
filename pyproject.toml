@@ -51,7 +51,7 @@ dev = [
 
 # Executables
 [project.scripts]
-adapter = "gmn_adapter.cli.adapter:adapter"
+adapter = "gmn_adapter.cli.adapter.adapter:adapter"
 poll_manager = "gmn_adapter.cli.polling.poll_manager:cli"
 sync_manager = "gmn_adapter.cli.syncing.sync_manager:cli"
 
