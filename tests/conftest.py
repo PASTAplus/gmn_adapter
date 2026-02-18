@@ -46,7 +46,7 @@ logger = daiquiri.getLogger(__name__)
 def config():
     return {
         "db_host": "localhost",
-        "db_port": "54321",
+        "db_port": "54320",
     }
 
 

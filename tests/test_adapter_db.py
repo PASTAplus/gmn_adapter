@@ -27,21 +27,21 @@ import utils.sqlite_utils as su
 logger = daiquiri.getLogger(__name__)
 
 # Constants derived from tests/data/adapter_queue.csv
-QUEUE_COUNT = 1099
-HEAD_PID = "knb-lter-arc.1008.8"
-TAIL_PID = "knb-lter-cap.727.1"
-NEWEST_PID = "knb-lter-cap.653.3"
-NEWEST_DATETIME = datetime(2025, 7, 23, 20, 30, 53, 241000)
-EVENT_PID ="knb-lter-gce.101.42"
-EVENT_DATETIME = datetime(2019, 10, 28, 14, 25, 24, 496000)
-EVENT_OWNER = "EDI-abdb1ad3e4f1715fb1994b49e15a4c7d40b98ae6"
-EVENT_DOI = "doi:10.0311/FK2/bc7949668fe934c4d7e1e99a219a5566"
+QUEUE_COUNT = 602
+HEAD_PID = "cos-spu.10.1"
+TAIL_PID = "edi.1847.3"
+NEWEST_PID = "edi.1847.3"
+NEWEST_DATETIME = datetime(2026, 2, 17, 17, 35, 34, 484000)
+EVENT_PID ="edi.2101.2"
+EVENT_DATETIME = datetime(2025, 10, 9, 16, 42, 33, 299000)
+EVENT_OWNER = "EDI-b162c0e7a462bf9d81753aad49a1b8ff7e481c1d"
+EVENT_DOI = "doi:10.6073/pasta/818b8bf1d93b81cc7c5124f9df81ce01"
 EVENT_DEQUEUED = False
 EVENT_INVALID_PID = "icarus.1.1"
-DEQUEUED_PID = "knb-lter-cap.574.1"
-DESCENDANT = "knb-lter-hbr.84.9"
-PACKAGE = "knb-lter-hbr.84.8"
-PREDECESSOR = "knb-lter-hbr.84.7"
+DEQUEUED_PID = "edi.2174.1"
+DESCENDANT = "knb-lter-ble.3.11"
+PACKAGE = "knb-lter-ble.3.10"
+PREDECESSOR = "knb-lter-ble.3.9"
 
 
 def test_new_queue_manager(queue_manager):
