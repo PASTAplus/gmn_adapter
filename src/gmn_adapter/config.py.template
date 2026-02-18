@@ -40,13 +40,21 @@ class Config:
     if not LOGS_DIR.exists():
         LOGS_DIR.mkdir()
 
+    LOCK_FILE_DIR = ROOT_DIR / "lockfiles"
+    if not LOCK_FILE_DIR.exists():
+        LOCK_FILE_DIR.mkdir()
+
+    POLL_LOCK = LOCK_FILE_DIR / "poll.lock"
+    SYNC_LOCK = LOCK_FILE_DIR / "sync.lock"
+    SYNC_IRQ = LOCK_FILE_DIR / "sync.irq"
+
     # Adapter Queue Sqlite Database
-    QUEUE =  ROOT_DIR / "QUEUE"
+    QUEUE =  str(ROOT_DIR / "QUEUE")
 
     # Boostrap
     TIMESTAMP = "2013-01-01 00:00:00"
 
-    # DATAONE/GMN configuration
+    # DataONE/GMN configuration
     CN_BASE_URL = "https://cn.dataone.org/cn"
     GMN_NODE = "GMN_NODE"
     GMN_USER = "GMN_USER"
