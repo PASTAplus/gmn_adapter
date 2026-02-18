@@ -19,8 +19,7 @@ import daiquiri
 from sqlalchemy import Engine
 
 from gmn_adapter.config import Config
-from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, \
-    GMNAdapterNonSynchronizedAncestor
+from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, GMNAdapterNonSynchronizedAncestor
 from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
