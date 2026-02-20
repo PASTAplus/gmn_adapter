@@ -26,11 +26,5 @@ def test_package(config):
     assert package is not None
 
     print("\n")
-    print(f"pid: {package.pid}")
-    print(f"doi: {package.doi}")
-    print(f"date_deactivated: {package.date_deactivated}")
-    for key, value in package.resource_ids.items():
-        print(f"{key}: {value}")
-    print(f"is_gmn_candidate: {package.is_gmn_candidate}")
-
     print(package)
+    print(package.ore)
