@@ -19,6 +19,8 @@ import click
 import daiquiri
 from sqlalchemy import Engine
 
+from gmn_adapter.cli.system_metadata import ResourceType
+from gmn_adapter.cli.system_metadata import system_metadata_factory
 from gmn_adapter.config import Config
 from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, GMNAdapterNonSynchronizedAncestor
 from gmn_adapter.gmn.client import Client
@@ -38,7 +40,7 @@ class packageStatus(IntFlag):
     DATA = 8
 
 
-def exists_in_gmn(package: Package, verbose: int=0) -> bool:
+def exists_in_gmn(package: Package, verbose: int=0, test: bool=False) -> bool:
     """
     Check if a data package exists in GMN.
 
@@ -52,6 +54,9 @@ def exists_in_gmn(package: Package, verbose: int=0) -> bool:
     Throws:
         GMNAdapterPartialDataPackageExists: If a partial data package exists in GMN.
     """
+
+    if test: return False
+
     gmn_client = Client(node=Config.GMN_NODE)
 
     status = packageStatus.EMPTY
@@ -95,12 +100,19 @@ def exists_in_gmn(package: Package, verbose: int=0) -> bool:
 
 def create(package: Package, repair: bool=False, verbose: int=0) -> None:
     """Create a new data package in GMN."""
-    pass
+    print(package)
+    for resource_type, resource_id in package.resource_ids.items():
+        if resource_type == ResourceType.DATA:
+            for data_entity in resource_id:
+                sysmeta = system_metadata_factory(resource_id=data_entity, resource_type=resource_type)
+        else:
+            sysmeta = system_metadata_factory(resource_id=resource_id, resource_type=resource_type)
 
 
 def update(predecessor: Package, package: Package, repair: bool=False, verbose: int=0) -> None:
     """Update an existing data package in GMN."""
-    pass
+    print(predecessor)
+    print(package)
 
 
 def synchronize_to_gmn(
@@ -108,7 +120,7 @@ def synchronize_to_gmn(
     queue_manager: QueueManager,
     pasta_db_engine: Engine,
     repair: bool=False,
-    dryrun: bool=True,
+    dryrun: bool=False,
     verbose: int=0
 ) -> None:
     """
@@ -135,7 +147,7 @@ def synchronize_to_gmn(
         raise GMNAdapterNonSynchronizedAncestor(f"Package {package.pid} has a non-synchronized ancestor")
 
     try:
-        if exists_in_gmn(package=package):  # re-throws GMNAdapterPartialDataPackageExists
+        if exists_in_gmn(package=package, test=True):  # re-throws GMNAdapterPartialDataPackageExists
             raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
     except GMNAdapterPartialDataPackageExists as e:
         if not repair:

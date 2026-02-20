@@ -33,7 +33,7 @@ def test_synchronize_create(queue_manager, config):
     """Test that a new package is created in GMN."""
     pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     predecessor = Package(PREDECESSOR, pasta_db_engine)
-    synchronize_to_gmn(package=predecessor, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine, dryrun=True)
+    synchronize_to_gmn(package=predecessor, queue_manager=queue_manager, pasta_db_engine=pasta_db_engine, dryrun=False)
 
 
 def test_synchronize_update(queue_manager, config):
