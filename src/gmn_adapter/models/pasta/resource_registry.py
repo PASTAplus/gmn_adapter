@@ -137,3 +137,34 @@ class ResourceRegistry:
             result = conn.execute(text(select))
         return result.scalar_one_or_none()
 
+    def get_resource_metadata(self, resource_id: str) -> tuple | None:
+        columns = "filename, date_created, sha1_checksum, md5_checksum, format_type, data_format, resource_size"
+        select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
+                  f"WHERE resource_id = '{resource_id}';")
+
+        with self._engine.connect() as conn:
+            result = conn.execute(text(select))
+        return result.one_or_none()
+
+
+    def get_resources(self, scope: str, identifier: str, revision: str) -> Sequence[Row[Any]]:
+        """
+        Retrieves a list of data package resources and their associated metadata.
+
+        Args:
+            scope (str): The scope value of the data package.
+            identifier: The identifier value of the data package.
+            revision: The revision value of the data package.
+
+        Returns:
+            Sequence[Row[Any]]: A sequence of rows containing the resource and its associated metadata.
+        """
+        columns = ("resource_type, resource_id, doi, filename, date_created, sha1_checksum, md5_checksum, format_type, data_format, resource_size")
+        select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
+                  f"WHERE scope = '{scope}' AND "
+                  f"identifier = '{identifier}' AND "
+                  f"revision = '{revision}';")
+
+        with self._engine.connect() as conn:
+            result = conn.execute(text(select))
+        return result.fetchall()
