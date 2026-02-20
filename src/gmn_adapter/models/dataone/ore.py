@@ -17,6 +17,7 @@ import d1_common.resource_map
 import d1_common.types.exceptions
 
 from gmn_adapter.config import Config
+from gmn_adapter.models.pasta.resource_type import ResourceType
 
 logger = daiquiri.getLogger(__name__)
 
@@ -36,13 +37,13 @@ def get_ore(pid: str, resources: dict) -> bytes:
     Returns:
         bytes: The serialized ORE map in XML format encoded as UTF-8.
     """
-    data = [resources[Config.METADATA], resources[Config.REPORT]]
-    for data_resource_id in resources[Config.DATA]:
+    data = [resources[ResourceType.METADATA], resources[ResourceType.REPORT]]
+    for data_resource_id in resources[ResourceType.DATA]:
         data.append(data_resource_id)
     ore = d1_common.resource_map.ResourceMap(base_url=Config.CN_BASE_URL)
     ore.initialize(pid=pid)
-    ore.addMetadataDocument(pid=resources[Config.METADATA])
-    ore.addDataDocuments(scidata_pid_list=data, scimeta_pid=resources[Config.METADATA])
+    ore.addMetadataDocument(pid=resources[ResourceType.METADATA])
+    ore.addDataDocuments(scidata_pid_list=data, scimeta_pid=resources[ResourceType.METADATA])
     return ore.serialize(format="xml").encode("utf-8")
 
 
