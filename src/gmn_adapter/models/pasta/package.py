@@ -18,53 +18,75 @@ import daiquiri
 
 from sqlalchemy import Engine
 
-from gmn_adapter.config import Config
 from gmn_adapter.exceptions import GMNAdapterDataPackageNotFound, GMNAdapterDataPackageResourcesNotFound
 import gmn_adapter.iam.client as iam_client
 import gmn_adapter.models.dataone.ore as ore
 from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
+from gmn_adapter.models.pasta.resource_type import ResourceType
 
 
 logger = daiquiri.getLogger(__name__)
 
 
-def _get_package_resource_ids(resource_registry: ResourceRegistry, scope: str, identifier: str, revision: str) -> dict:
+def _get_package_resources(resource_registry: ResourceRegistry, scope: str, identifier: str, revision: str) -> list:
     """
-    Retrieve resource IDs for a PASTA data package.
+    Retrieve resources for a PASTA data package.
 
     Args:
         scope (str): the scope of the package
         identifier (str): the identifier of the package
         revision (str): the revision of the package
 
-    Returns: resource_ids (dict)
+    Returns: resources (dict)
 
     Throws: GMNAdapterDataPackageResourcesNotFound
 
     """
-    rids = resource_registry.get_resource_ids(scope=scope, identifier=identifier, revision=revision)
-    if len(rids) == 0:
+    resources = resource_registry.get_resources(scope=scope, identifier=identifier, revision=revision)
+    if len(resources) == 0:
         msg = f"No data package resources for \"{scope}.{identifier}.{revision}\" were found on PASTA."
         raise GMNAdapterDataPackageResourcesNotFound(msg)
 
-    resource_ids = {}
-    data_entities = []
-    # Categorize resource ids into resource types
-    for rid in rids:
-        resource_id = rid[0]
-        resource_type = rid[1]
-        if resource_type == Config.PACKAGE:
-            resource_ids[Config.PACKAGE] = resource_id
-        elif resource_type == Config.METADATA:
-            resource_ids[Config.METADATA] = resource_id
-        elif resource_type == Config.REPORT:
-            resource_ids[Config.REPORT] = resource_id
-        elif resource_type == Config.DATA:
-            data_entities.append(resource_id)
-    resource_ids[Config.DATA] = data_entities
-    resource_ids[Config.ORE] = resource_registry.get_package_doi(scope=scope, identifier=identifier, revision=revision)
+    resource_list = []
+    for resource in resources:
+        resource_type = ResourceType(resource[0])
+        resource_id = resource[1].strip()
+        doi = resource[2].strip() if resource[2] is not None else None
+        filename = resource[3].strip() if resource[3] is not None else None
+        date_created = resource[4].isoformat()
+        sha1_checksum = resource[5].strip() if resource[5] is not None else None
+        md5_checksum = resource[6].strip() if resource[6] is not None else None
+        format_type = resource[7].strip() if resource[7] is not None else None
+        data_format = resource[8].strip() if resource[8] is not None else None
+        resource_size = resource[9]
+        r = (resource_type, resource_id, doi, filename, date_created, sha1_checksum, md5_checksum, format_type, data_format, resource_size)
+        resource_list.append(r)
 
-    return resource_ids
+    return resource_list
+
+
+def _get_resource_types(resources: list) -> dict:
+    resource_types = {}
+    data_entities = []
+    for resource in resources:
+        resource_type = ResourceType(resource[0])
+        resource_id = resource[1]
+        if resource_type == ResourceType.DATA:
+            data_entities.append(resource_id)
+        else:
+            resource_types[resource_type] = resource_id
+    resource_types[ResourceType.DATA] = data_entities
+
+    return resource_types
+
+
+def _get_package_doi(resources: list) -> str | None:
+    doi = None
+    for resource in resources:
+        if resource[0] == ResourceType.DATA_PACKAGE:
+            doi = resource[2]
+    return doi
+
 
 
 class Package:
@@ -107,14 +129,15 @@ class Package:
         resource_registry = ResourceRegistry(pasta_db_engine=pasta_db_engine)
         self._pid = pid
         try:
-            self._resource_ids = _get_package_resource_ids(resource_registry, self._scope, self._identifier, self._revision)
+            self._resources = _get_package_resources(resource_registry, self._scope, self._identifier, self._revision)
         except GMNAdapterDataPackageResourcesNotFound as e:
             msg = f"Data package \"{pid}\" was not found on PASTA."
             raise GMNAdapterDataPackageNotFound(msg) from e
-        self._doi = self._resource_ids[Config.ORE]
+        self._resource_types = _get_resource_types(self._resources)
+        self._doi = _get_package_doi(self._resources)
         self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)
         self._is_gmn_candidate = self._is_gmn_candidate()
-        self._ore = ore.get_ore(pid=self._doi, resources=self._resource_ids)
+        self._ore = ore.get_ore(pid=self._doi, resources=self._resource_types)
 
     @property
     def scope(self) -> str:
@@ -133,8 +156,8 @@ class Package:
         return self._pid
 
     @property
-    def resource_ids(self) -> dict:
-        return self._resource_ids
+    def resource_types(self) -> dict:
+        return self._resource_types
 
     @property
     def doi(self) -> str:
@@ -143,6 +166,10 @@ class Package:
     @property
     def date_deactivated(self) -> datetime | None:
         return self._date_deactivated
+
+    @property
+    def ore(self) -> str:
+        return self._ore.decode("utf-8")
 
     @property
     def is_gmn_candidate(self) -> bool:
@@ -163,22 +190,22 @@ class Package:
             logger.warning(f"Package {self.pid} has been deactivated.")
             return False
 
-        data_entities = self.resource_ids[Config.DATA]
+        data_entities = self.resource_types[ResourceType.DATA]
         if len(data_entities) == 0:
             logger.warning(f"Package {self.pid} has no data entities.")
             return False
 
         public_token = iam_client.get_public_token()
 
-        if not iam_client.is_authorized(public_token, self.resource_ids[Config.PACKAGE], "read"):
+        if not iam_client.is_authorized(public_token, self.resource_types[ResourceType.DATA_PACKAGE], "read"):
             logger.warning(f"Package {self.pid} does not have Public read access to package metadata.")
             return False
 
-        if not iam_client.is_authorized(public_token, self.resource_ids[Config.METADATA], "read"):
+        if not iam_client.is_authorized(public_token, self.resource_types[ResourceType.METADATA], "read"):
             logger.warning(f"Package {self.pid} does not have Public read access to package metadata.")
             return False
 
-        if not iam_client.is_authorized(public_token, self.resource_ids[Config.REPORT], "read"):
+        if not iam_client.is_authorized(public_token, self.resource_types[ResourceType.REPORT], "read"):
             logger.warning(f"Package {self.pid} does not have Public read access to package report.")
             return False
 
@@ -197,7 +224,7 @@ class Package:
             str: package details
         """
         resources = ""
-        for resource_type, resource_id in self._resource_ids.items():
+        for resource_type, resource_id in self._resource_types.items():
             resources += f"    {resource_type}: {resource_id}\n"
 
         package_details = (
