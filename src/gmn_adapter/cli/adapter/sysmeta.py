@@ -62,7 +62,7 @@ def sysmeta(ctx, pid: str, full: bool, update: str, verify: bool):
         try:
             gmn_client.update_system_metadata(pid, sys_meta)
         except d1_exceptions.NotFound as e:
-            msg = f"System metadata not found for \"{pid}\" on \"{Config.GMN_NODE}\"."
+            msg = f"System metadata not found for \"{pid}\" on the \"{Config.GMN_NODE}\" GMN."
             click.echo(msg)
             logger.info(msg)
             sys.exit(1)
@@ -77,7 +77,7 @@ def sysmeta(ctx, pid: str, full: bool, update: str, verify: bool):
     try:
         sys_meta: SysMeta = gmn_client.get_system_metadata(pid)
     except d1_exceptions.NotFound as e:
-        msg = f"System metadata not found for \"{pid}\" on \"{exclude_empty}\"."
+        msg = f"System metadata not found for \"{pid}\" on the \"{Config.GMN_NODE}\" GMN."
         click.echo(msg)
         logger.info(msg)
         sys.exit(1)
