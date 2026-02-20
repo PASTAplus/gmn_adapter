@@ -41,3 +41,25 @@ def test_get_resource_ids(resource_registry):
     print("\n")
     for resource_id in resource_ids:
         print(resource_id)
+
+
+def test_get_resource_metadata(resource_registry):
+    """
+    Test retrieval of data package resource metadata.
+    """
+    resources = resource_registry.get_resource_ids(scope="edi", identifier="1", revision="1")
+    print("\n")
+    for resource in resources:
+        metadata = resource_registry.get_resource_metadata(resource[0])
+        assert metadata is not None
+        print(f"{resource[0]}: {metadata}")
+
+def test_get_resources(resource_registry):
+    """
+    Test retrieval of data package resource metadata.
+    """
+    resources = resource_registry.get_resources(scope="edi", identifier="1", revision="1")
+    assert len(resources) >= 1
+    print("\n")
+    for resource in resources:
+          print(f"{resource[0]}: {resource}")
