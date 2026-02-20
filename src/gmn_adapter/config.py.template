@@ -77,13 +77,6 @@ class Config:
     PASTA_PROTOCOL = "PASTA_PROTOCOL"
     PASTA_SERVICE = f"{PASTA_PROTOCOL}://{PASTA_HOST}:{PASTA_PORT}"
 
-    # PASTA resource types
-    PACKAGE = "package"
-    METADATA = "metadata"
-    DATA = "data"
-    REPORT = "report"
-    ORE = "ore"
-
     # PASTA resource URL patterns
     PACKAGE_PATTERN = "/package/eml"
     METADATA_PATTERN = "/package/metadata/eml"
