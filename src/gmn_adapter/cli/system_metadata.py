@@ -17,25 +17,20 @@ from enum import StrEnum
 import daiquiri
 
 from gmn_adapter.models.dataone.sysmeta import SysMeta
+from gmn_adapter.models.pasta.package import ResourceMap
 from gmn_adapter.models.pasta.package import ResourceType
-from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
 
 
 logger = daiquiri.getLogger(__name__)
 
 
-def system_metadata_factory(resource_id: str, resource_type: ResourceType, data: bytes=None) -> SysMeta:
+def system_metadata_factory(resource: tuple) -> SysMeta:
     """
     Creates a system metadata object for a given resource.
 
     Args:
-        resource_id (str): The identifier for the resource for which metadata is being created.
-        resource_type (ResourceType): The type of the resource being processed.
-        data (bytes, optional): Additional binary data associated with the ORE resource. Defaults to None.
+        resource (tuple): A tuple containing resource information.
 
     Returns:
         SysMeta: An instance of the system metadata object representing the given resource.
     """
-    resource_path = resource_id.split("/")
-    pass
-    # return SysMeta()
