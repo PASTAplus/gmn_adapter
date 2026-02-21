@@ -17,12 +17,13 @@ import d1_common.resource_map
 import d1_common.types.exceptions
 
 from gmn_adapter.config import Config
+from gmn_adapter.models.pasta.resource_map import ResourceMap
 from gmn_adapter.models.pasta.resource_type import ResourceType
 
 logger = daiquiri.getLogger(__name__)
 
 
-def get_ore(pid: str, resources: dict) -> bytes:
+def get_ore(resources: list[tuple]) -> bytes:
     """
     Generates a DataONE ORE (Object Reuse and Exchange) resource map in XML format.
 
@@ -31,19 +32,18 @@ def get_ore(pid: str, resources: dict) -> bytes:
     encoded as UTF-8.
 
     Args:
-        pid (str): The persistent identifier (PASTA DOI) for the ORE map.
         resources (dict): A dictionary containing PASTA resources required to generate the ORE map.
 
     Returns:
         bytes: The serialized ORE map in XML format encoded as UTF-8.
     """
-    data = [resources[ResourceType.METADATA], resources[ResourceType.REPORT]]
-    for data_resource_id in resources[ResourceType.DATA]:
-        data.append(data_resource_id)
+    data = [r[ResourceMap.RESOURCE_ID] for r in resources if r[ResourceMap.RESOURCE_TYPE] != ResourceType.DATA_PACKAGE]
+    doi = [r[ResourceMap.DOI] for r in resources if r[ResourceMap.RESOURCE_TYPE] == ResourceType.DATA_PACKAGE][0]
     ore = d1_common.resource_map.ResourceMap(base_url=Config.CN_BASE_URL)
-    ore.initialize(pid=pid)
-    ore.addMetadataDocument(pid=resources[ResourceType.METADATA])
-    ore.addDataDocuments(scidata_pid_list=data, scimeta_pid=resources[ResourceType.METADATA])
+    ore.initialize(pid=doi)
+    metadata = [r[ResourceMap.RESOURCE_ID] for r in resources if r[ResourceMap.RESOURCE_TYPE] == ResourceType.METADATA][0]
+    ore.addMetadataDocument(pid=metadata)
+    ore.addDataDocuments(scidata_pid_list=data, scimeta_pid=metadata)
     return ore.serialize(format="xml").encode("utf-8")
 
 
