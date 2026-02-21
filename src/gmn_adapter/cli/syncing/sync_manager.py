@@ -23,7 +23,8 @@ import daiquiri
 from gmn_adapter.config import Config
 from gmn_adapter.cli.configuration import configuration
 from gmn_adapter.cli.synchronize import synchronize_to_gmn
-from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, GMNAdapterNonSynchronizedAncestor
+from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, \
+    GMNAdapterNonSynchronizedAncestor, GMNAdapterPackageIsNotGMNCandidate
 from gmn_adapter.lock import Lock
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
@@ -70,12 +71,17 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
         if verbose > 0:
             click.echo(f"Processing package: {pid}")
         logger.info(f"Processing package: {pid}")
-        package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
-
-        if verbose > 0:
-            click.echo(f"Attempting to synchronize package: {package.pid}")
-        logger.info(f"Attempting to synchronize package: {package.pid}")
-        if package.is_gmn_candidate:
+        try:
+            package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
+        except GMNAdapterPackageIsNotGMNCandidate as e:
+            if verbose > 0:
+                click.echo(f"Package {pid} is not a GMN candidate - skipping.")
+            logger.warning(f"Package {pid} is not a GMN candidate - skipping.")
+            queue_manager.set_dirty(package=pid)
+        else:
+            if verbose > 0:
+                click.echo(f"Attempting to synchronize package: {package.pid}")
+            logger.info(f"Attempting to synchronize package: {package.pid}")
             try:
                 synchronize_to_gmn(
                     package=package,
@@ -110,12 +116,6 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
                 logger.info(f"Package {package.pid} successfully synchronized to GMN.")
                 if not dryrun:
                     queue_manager.dequeue(package.pid)
-        else:
-            if verbose > 0:
-                click.echo(f"Package {package.pid} is not a GMN candidate - skipping.")
-            logger.warning(f"Package {package.pid} is not a GMN candidate - skipping.")
-            queue_manager.set_dirty(package=pid)
-
         queue_head = queue_manager.get_head(clean=True)
 
     lock.release()
