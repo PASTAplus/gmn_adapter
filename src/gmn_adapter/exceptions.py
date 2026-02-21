@@ -42,3 +42,7 @@ class GMNAdapterPartialDataPackageExists(GMNAdapterError):
 
 class GMNAdapterNonSynchronizedAncestor(GMNAdapterError):
     pass
+
+
+class GMNAdapterPackageIsNotGMNCandidate(GMNAdapterError):
+    pass
