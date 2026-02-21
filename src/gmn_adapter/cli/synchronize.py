@@ -19,28 +19,20 @@ import click
 import daiquiri
 from sqlalchemy import Engine
 
-from gmn_adapter.cli.system_metadata import ResourceType
 from gmn_adapter.cli.system_metadata import system_metadata_factory
 from gmn_adapter.config import Config
 from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, GMNAdapterNonSynchronizedAncestor
 from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
+from gmn_adapter.models.pasta.resource_map import ResourceMap
+from gmn_adapter.models.pasta.resource_type import ResourceType
 
 
 logger = daiquiri.getLogger(__name__)
 
 
-class packageStatus(IntFlag):
-    """Enumeration of package status flags."""
-    EMPTY = 0
-    ORE = 1
-    METADATA = 2
-    REPORT = 4
-    DATA = 8
-
-
-def exists_in_gmn(package: Package, verbose: int=0, test: bool=False) -> bool:
+def exists_in_gmn(package: Package, verbose: int=0) -> bool:
     """
     Check if a data package exists in GMN.
 
@@ -54,44 +46,20 @@ def exists_in_gmn(package: Package, verbose: int=0, test: bool=False) -> bool:
     Throws:
         GMNAdapterPartialDataPackageExists: If a partial data package exists in GMN.
     """
-
-    if test: return False
-
     gmn_client = Client(node=Config.GMN_NODE)
 
-    status = packageStatus.EMPTY
-    complete = packageStatus.ORE | packageStatus.METADATA | packageStatus.REPORT | packageStatus.DATA
     missing_resources = []
+    object_count = 0
+    for resource in package.resources:
+        if resource[ResourceMap.RESOURCE_TYPE.value] != ResourceType.DATA_PACKAGE:
+            if gmn_client.object_exists(resource[ResourceMap.RESOURCE_ID.value]):
+                object_count += 1
+            else:
+                missing_resources.append(resource[ResourceMap.RESOURCE_ID.value])
 
-    ore = package.doi
-    if gmn_client.object_exists(ore):
-        status = packageStatus.ORE
-    else:
-        missing_resources.append(ore)
-
-    metadata = package.resource_ids[Config.METADATA]
-    if gmn_client.object_exists(metadata):
-        status = status | packageStatus.METADATA
-    else:
-        missing_resources.append(metadata)
-
-    report = package.resource_ids[Config.REPORT]
-    if gmn_client.object_exists(report):
-        status = status | packageStatus.REPORT
-    else:
-        missing_resources.append(report)
-
-    all_data = True
-    for data in package.resource_ids[Config.DATA]:
-        if not gmn_client.object_exists(data):
-            all_data = False
-            missing_resources.append(data)
-    if all_data:
-        status = status | packageStatus.DATA
-
-    if status == complete:
+    if object_count == len(package.resources) - 1:
         return True
-    elif status == packageStatus.EMPTY:
+    elif object_count == 0:
         return False
     else:
         msg = f"A partial data package exists in GMN for {package.pid}."
@@ -101,12 +69,8 @@ def exists_in_gmn(package: Package, verbose: int=0, test: bool=False) -> bool:
 def create(package: Package, repair: bool=False, verbose: int=0) -> None:
     """Create a new data package in GMN."""
     print(package)
-    for resource_type, resource_id in package.resource_ids.items():
-        if resource_type == ResourceType.DATA:
-            for data_entity in resource_id:
-                sysmeta = system_metadata_factory(resource_id=data_entity, resource_type=resource_type)
-        else:
-            sysmeta = system_metadata_factory(resource_id=resource_id, resource_type=resource_type)
+    for resource in package.resources:
+        sysmeta = system_metadata_factory(resource=resource)
 
 
 def update(predecessor: Package, package: Package, repair: bool=False, verbose: int=0) -> None:
@@ -147,7 +111,7 @@ def synchronize_to_gmn(
         raise GMNAdapterNonSynchronizedAncestor(f"Package {package.pid} has a non-synchronized ancestor")
 
     try:
-        if exists_in_gmn(package=package, test=True):  # re-throws GMNAdapterPartialDataPackageExists
+        if exists_in_gmn(package=package):  # re-throws GMNAdapterPartialDataPackageExists
             raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
     except GMNAdapterPartialDataPackageExists as e:
         if not repair:
