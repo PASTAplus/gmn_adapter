@@ -19,7 +19,12 @@ import daiquiri
 
 from gmn_adapter.config import Config
 from gmn_adapter.cli.synchronize import synchronize_to_gmn
-from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, GMNAdapterNonSynchronizedAncestor
+from gmn_adapter.exceptions import (
+    GMNAdapterDataPackageExists,
+    GMNAdapterPartialDataPackageExists,
+    GMNAdapterNonSynchronizedAncestor,
+    GMNAdapterPackageIsNotGMNCandidate
+)
 from gmn_adapter.lock import Lock
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
@@ -56,9 +61,13 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
 
     pasta_db_engine = get_pasta_db_engine()
     queue_manager = QueueManager(Config.QUEUE)
-    package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
-
-    if package.is_gmn_candidate:
+    try:
+        package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
+    except GMNAdapterPackageIsNotGMNCandidate as e:
+        if verbose > 0:
+            click.echo(f"Package {pid} is not a GMN candidate - skipping.")
+        logger.warning(f"Package {pid} is not a GMN candidate - skipping.")
+    else:
         try:
             synchronize_to_gmn(
                 package=package,
@@ -86,10 +95,6 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
             if verbose > 0:
                 click.echo(f"Package {package.pid} successfully synchronized to GMN.")
             logger.info(f"Package {package.pid} successfully synchronized to GMN.")
-    else:
-        if verbose > 0:
-            click.echo(f"Package {package.pid} is not a GMN candidate - skipping.")
-        logger.warning(f"Package {package.pid} is not a GMN candidate - skipping.")
 
     lock.release()
     logger.warning(f"Lock file {lock.lock_file} released")
