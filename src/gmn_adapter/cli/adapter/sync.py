@@ -23,7 +23,7 @@ from gmn_adapter.exceptions import (
     GMNAdapterDataPackageExists,
     GMNAdapterPartialDataPackageExists,
     GMNAdapterNonSynchronizedAncestor,
-    GMNAdapterPackageIsNotGMNCandidate, GMNAdapterError
+    GMNAdapterPackageIsNotGMNCandidate, GMNAdapterError, GMNAdapterDataPackageNotFound
 )
 from gmn_adapter.lock import Lock
 from gmn_adapter.models.adapter.adapter_db import QueueManager
@@ -63,6 +63,10 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
     queue_manager = QueueManager(Config.QUEUE)
     try:
         package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
+    except GMNAdapterDataPackageNotFound:
+        if verbose > 0:
+            click.echo(f"Data package \"{pid}\" was not found on PASTA - skipping.")
+        logger.warning(f"Data package \"{pid}\" was not found on PASTA - skipping..")
     except GMNAdapterPackageIsNotGMNCandidate as e:
         if verbose > 0:
             click.echo(f"Package {pid} is not a GMN candidate - skipping.")
@@ -79,25 +83,25 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
             )
         except GMNAdapterPartialDataPackageExists as e:
             if verbose > 0:
-                click.echo(f"Missing data package resources in GMN for {package.pid}:")
+                click.echo(f"Missing data package resources in GMN for \"{pid}\":")
                 for resource in e.missing_resources: click.echo(f"\t{resource}")
-            logger.error(f"Missing data package resources in GMN for {package.pid}: {e}")
+            logger.error(f"Missing data package resources in GMN for \"{pid}\": {e}")
         except GMNAdapterDataPackageExists as e:
             if verbose > 0:
-                click.echo(f"Package {package.pid} already exists in GMN.")
-            logger.info(f"Package {package.pid} already exists in GMN.")
+                click.echo(f"Package \"{pid}\" already exists in GMN.")
+            logger.info(f"Package \"{pid}\" already exists in GMN.")
         except GMNAdapterNonSynchronizedAncestor as e:
             if verbose > 0:
-                click.echo(f"Error synchronizing package {package.pid}")
-            logger.error(f"Error synchronizing package {package.pid}: {e}")
+                click.echo(f"Error synchronizing package \"{pid}\"")
+            logger.error(f"Error synchronizing package \"{pid}\": {e}")
         except GMNAdapterError as e:
             if verbose > 0:
-                click.echo(f"Error synchronizing package {package.pid}")
-            logger.error(f"Error synchronizing package {package.pid}: {e}")
+                click.echo(f"Error synchronizing package \"{pid}\"")
+            logger.error(f"Error synchronizing package \"{pid}\": {e}")
         else:
             if verbose > 0:
-                click.echo(f"Package {package.pid} successfully synchronized to GMN.")
-            logger.info(f"Package {package.pid} successfully synchronized to GMN.")
+                click.echo(f"Package \"{pid}\" successfully synchronized to GMN.")
+            logger.info(f"Package \"{pid}\" successfully synchronized to GMN.")
 
     lock.release()
     logger.warning(f"Lock file {lock.lock_file} released")

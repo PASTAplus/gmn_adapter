@@ -24,7 +24,8 @@ from gmn_adapter.config import Config
 from gmn_adapter.cli.configuration import configuration
 from gmn_adapter.cli.synchronize import synchronize_to_gmn
 from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, \
-    GMNAdapterNonSynchronizedAncestor, GMNAdapterPackageIsNotGMNCandidate, GMNAdapterError
+    GMNAdapterNonSynchronizedAncestor, GMNAdapterPackageIsNotGMNCandidate, GMNAdapterError, \
+    GMNAdapterDataPackageNotFound
 from gmn_adapter.lock import Lock
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
@@ -73,10 +74,14 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
         logger.info(f"Processing package: {pid}")
         try:
             package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
+        except GMNAdapterDataPackageNotFound:
+            if verbose > 0:
+                click.echo(f"Data package \"{pid}\" was not found on PASTA - skipping.")
+            logger.warning(f"Data package \"{pid}\" was not found on PASTA - skipping..")
         except GMNAdapterPackageIsNotGMNCandidate as e:
             if verbose > 0:
-                click.echo(f"Package {pid} is not a GMN candidate - skipping.")
-            logger.warning(f"Package {pid} is not a GMN candidate - skipping.")
+                click.echo(f"Package \"{pid}\" is not a GMN candidate - skipping.")
+            logger.warning(f"Package \"{pid}\" is not a GMN candidate - skipping.")
             queue_manager.set_dirty(package=pid)
         else:
             if verbose > 0:
@@ -93,32 +98,32 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
                 )
             except GMNAdapterPartialDataPackageExists as e:
                 if verbose > 0:
-                    click.echo(f"Missing data package resources in GMN for {package.pid}:")
+                    click.echo(f"Missing data package resources in GMN for \"{pid}\":")
                     for resource in e.missing_resources: click.echo(f"\t{resource}")
-                logger.error(f"Missing data package resources in GMN for {package.pid}: {e}")
+                logger.error(f"Missing data package resources in GMN for \"{pid}\": {e}")
                 queue_manager.set_dirty(package=pid)
             except GMNAdapterDataPackageExists as e:
                 # Log the message and continue the loop
                 if verbose > 0:
-                    click.echo(f"Package {package.pid} already exists in GMN.")
-                logger.info(f"Package {package.pid} already exists in GMN.")
+                    click.echo(f"Package \"{pid}\" already exists in GMN.")
+                logger.info(f"Package \"{pid}\" already exists in GMN.")
                 if not dryrun:
                     queue_manager.dequeue(package.pid)
                 queue_manager.set_dirty(package=pid)
             except GMNAdapterNonSynchronizedAncestor as e:
                 if verbose > 0:
-                    click.echo(f"Error synchronizing package {package.pid}")
-                logger.error(f"Error synchronizing package {package.pid}: {e}")
+                    click.echo(f"Error synchronizing package \"{pid}\"")
+                logger.error(f"Error synchronizing package \"{pid}\": {e}")
                 break  # An exceptional Exception has occurred
             except GMNAdapterError as e:
                 if verbose > 0:
-                    click.echo(f"Error synchronizing package {package.pid}")
-                logger.error(f"Error synchronizing package {package.pid}: {e}")
+                    click.echo(f"Error synchronizing package \"{pid}\"")
+                logger.error(f"Error synchronizing package \"{pid}\": {e}")
                 break  # An exceptional Exception has occurred
             else:
                 if verbose > 0:
-                    click.echo(f"Package {package.pid} successfully synchronized to GMN.")
-                logger.info(f"Package {package.pid} successfully synchronized to GMN.")
+                    click.echo(f"Package \"{pid}\" successfully synchronized to GMN.")
+                logger.info(f"Package \"{pid}\" successfully synchronized to GMN.")
                 if not dryrun:
                     queue_manager.dequeue(package.pid)
         queue_head = queue_manager.get_head(clean=True)
