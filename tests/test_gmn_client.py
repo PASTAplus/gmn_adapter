@@ -17,6 +17,7 @@ from datetime import datetime
 import d1_common.types.exceptions
 import daiquiri
 
+from gmn_adapter.config import Config
 from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.dataone.replica import Replica, ReplicaStatus
 from gmn_adapter.models.dataone.replication_policy import ReplicationPolicy
@@ -27,13 +28,13 @@ logger = daiquiri.getLogger(__name__)
 
 
 def test_gmn_client():
-    client = Client("EDI")
+    client = Client(Config.GMN_NODE)
     assert client is not None
 
 
 def test_from_pyxb():
     pid = "https://pasta.lternet.edu/package/metadata/eml/edi/2033/1"
-    client = Client("EDI")
+    client = Client(Config.GMN_NODE)
     system_metadata = client.get_system_metadata(pid, raw=True)
     sys_meta = SysMeta.from_pyxb(system_metadata)
     assert sys_meta is not None
@@ -42,7 +43,7 @@ def test_from_pyxb():
 
 def test_to_pyxb():
     pid = "https://pasta.lternet.edu/package/metadata/eml/edi/2033/1"
-    client = Client("EDI")
+    client = Client(Config.GMN_NODE)
     sys_meta: SysMeta = client.get_system_metadata(pid)
 
     replication_policy = ReplicationPolicy(
@@ -66,7 +67,7 @@ def test_to_pyxb():
 
 def test_get_system_metadata():
     pid = "https://pasta.lternet.edu/package/metadata/eml/edi/2033/1"
-    client = Client("EDI")
+    client = Client(Config.GMN_NODE)
     system_metadata = client.get_system_metadata(pid)
     assert system_metadata is not None
     print("\n")
@@ -74,7 +75,7 @@ def test_get_system_metadata():
 
 
 def test_list_objects():
-    client = Client("EDI")
+    client = Client(Config.GMN_NODE)
     objects = client.list_objects()
     assert objects is not None
     for info in objects.objectInfo:
@@ -83,7 +84,7 @@ def test_list_objects():
 
 def test_describe():
     pid = "https://pasta.lternet.edu/package/metadata/eml/edi/2033/1"
-    client = Client("EDI")
+    client = Client(Config.GMN_NODE)
     try:
         describe = client._describe(pid)
     except d1_common.types.exceptions.NotFound as e:
