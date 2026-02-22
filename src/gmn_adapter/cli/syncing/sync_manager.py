@@ -24,7 +24,7 @@ from gmn_adapter.config import Config
 from gmn_adapter.cli.configuration import configuration
 from gmn_adapter.cli.synchronize import synchronize_to_gmn
 from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, \
-    GMNAdapterNonSynchronizedAncestor, GMNAdapterPackageIsNotGMNCandidate
+    GMNAdapterNonSynchronizedAncestor, GMNAdapterPackageIsNotGMNCandidate, GMNAdapterError
 from gmn_adapter.lock import Lock
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
@@ -91,11 +91,6 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
                     dryrun=dryrun,
                     verbose=verbose
                 )
-            except GMNAdapterNonSynchronizedAncestor as e:
-                if verbose > 0:
-                    click.echo(f"Error synchronizing package {package.pid}")
-                logger.error(f"Error synchronizing package {package.pid}: {e}")
-                break  # An exceptional Exception has occurred
             except GMNAdapterPartialDataPackageExists as e:
                 if verbose > 0:
                     click.echo(f"Missing data package resources in GMN for {package.pid}:")
@@ -110,6 +105,16 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
                 if not dryrun:
                     queue_manager.dequeue(package.pid)
                 queue_manager.set_dirty(package=pid)
+            except GMNAdapterNonSynchronizedAncestor as e:
+                if verbose > 0:
+                    click.echo(f"Error synchronizing package {package.pid}")
+                logger.error(f"Error synchronizing package {package.pid}: {e}")
+                break  # An exceptional Exception has occurred
+            except GMNAdapterError as e:
+                if verbose > 0:
+                    click.echo(f"Error synchronizing package {package.pid}")
+                logger.error(f"Error synchronizing package {package.pid}: {e}")
+                break  # An exceptional Exception has occurred
             else:
                 if verbose > 0:
                     click.echo(f"Package {package.pid} successfully synchronized to GMN.")

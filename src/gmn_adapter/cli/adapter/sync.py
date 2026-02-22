@@ -23,7 +23,7 @@ from gmn_adapter.exceptions import (
     GMNAdapterDataPackageExists,
     GMNAdapterPartialDataPackageExists,
     GMNAdapterNonSynchronizedAncestor,
-    GMNAdapterPackageIsNotGMNCandidate
+    GMNAdapterPackageIsNotGMNCandidate, GMNAdapterError
 )
 from gmn_adapter.lock import Lock
 from gmn_adapter.models.adapter.adapter_db import QueueManager
@@ -77,20 +77,23 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
                 dryrun=dryrun,
                 verbose=verbose
             )
-        except GMNAdapterNonSynchronizedAncestor as e:
-            if verbose > 0:
-                click.echo(f"Error synchronizing package {package.pid}")
-            logger.error(f"Error synchronizing package {package.pid}: {e}")
         except GMNAdapterPartialDataPackageExists as e:
             if verbose > 0:
                 click.echo(f"Missing data package resources in GMN for {package.pid}:")
                 for resource in e.missing_resources: click.echo(f"\t{resource}")
             logger.error(f"Missing data package resources in GMN for {package.pid}: {e}")
         except GMNAdapterDataPackageExists as e:
-            # Log the message and continue the loop
             if verbose > 0:
                 click.echo(f"Package {package.pid} already exists in GMN.")
             logger.info(f"Package {package.pid} already exists in GMN.")
+        except GMNAdapterNonSynchronizedAncestor as e:
+            if verbose > 0:
+                click.echo(f"Error synchronizing package {package.pid}")
+            logger.error(f"Error synchronizing package {package.pid}: {e}")
+        except GMNAdapterError as e:
+            if verbose > 0:
+                click.echo(f"Error synchronizing package {package.pid}")
+            logger.error(f"Error synchronizing package {package.pid}: {e}")
         else:
             if verbose > 0:
                 click.echo(f"Package {package.pid} successfully synchronized to GMN.")
