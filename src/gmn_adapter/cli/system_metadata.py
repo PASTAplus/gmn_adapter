@@ -16,11 +16,9 @@ import daiquiri
 import requests
 
 from gmn_adapter.config import Config
-from gmn_adapter.exceptions import GMNAdapterError
 from gmn_adapter.models.dataone.sysmeta import SysMeta
 from gmn_adapter.models.dataone.access_policy import AccessPolicy, AccessRule, Permission
 from gmn_adapter.models.dataone.checksum import Checksum
-from gmn_adapter.models.dataone.replica import Replica
 from gmn_adapter.models.dataone.replication_policy import ReplicationPolicy
 from gmn_adapter.models.mime.mime_types import MimeType
 from gmn_adapter.models.pasta.package import ResourceMap
@@ -35,13 +33,14 @@ def _get_resource(resource_id: str) -> bytes:
     return r.content
 
 
-def system_metadata_factory(package_id: str, resource: tuple) -> SysMeta:
+def system_metadata_factory(package_id: str, replication_policy: tuple, resource: list) -> SysMeta:
     """
     Creates a system metadata object for a given resource.
 
     Args:
         package_id (str): The identifier of the data package containing the resource.
-        resource (tuple): A tuple containing resource information.
+        replication_policy (tuple): A tuple containing replication policy information or None.
+        resource (list): A list containing resource information.
 
     Returns:
         SysMeta: An instance of the system metadata object representing the given resource.
@@ -49,25 +48,27 @@ def system_metadata_factory(package_id: str, resource: tuple) -> SysMeta:
     resource_id = resource[ResourceMap.RESOURCE_ID.value]
     resource_type = resource[ResourceMap.RESOURCE_TYPE.value]
 
-    try:
-        resource_file = _get_resource(resource_id) if resource_type == ResourceType.METADATA or resource_type == ResourceType.REPORT else None
-    except requests.exceptions.RequestException as e:
-        msg = f"Failed to retrieve resource {resource_id} when generating system metadata: {e}"
-        logger.error(msg)
-        raise GMNAdapterError(msg) from e
+    # Check for replication policy
+    if replication_policy is not None:
+        replication_policy = ReplicationPolicy(
+            replication_allowed=replication_policy[0],
+            number_replicas=int(replication_policy[1]),
+            preferred_member_node=[replication_policy[2]],
+            blocked_member_node=[] if replication_policy[3] is None else [replication_policy[3]]
+        )
 
     format_id = None
     media_type = None
     file_name = None
     series_id = package_id.rsplit('.', 1)[0]
     match resource_type:
-        case ResourceType.METADATA | ResourceType.ORE:
+        case ResourceType.METADATA:
             format_id = resource[ResourceMap.FORMAT_TYPE.value]
-            media_typ = "application/xml"
+            media_type = "application/xml"
             file_name = f"{package_id}.xml"
         case ResourceType.ORE :
             format_id = resource[ResourceMap.FORMAT_TYPE.value]
-            media_typ = "application/xml"
+            media_type = "application/xml"
             file_name = f"{package_id}-ore.xml"
         case ResourceType.REPORT:
             format_id = media_type = "application/xml"
@@ -80,8 +81,8 @@ def system_metadata_factory(package_id: str, resource: tuple) -> SysMeta:
                 format_id = media_type = "application/octet-stream"
             file_name = resource[ResourceMap.FILENAME.value]
 
-    size = len(resource_file) if resource[ResourceMap.RESOURCE_SIZE.value] is None else resource[ResourceMap.RESOURCE_SIZE.value]
-
+    size = resource[ResourceMap.RESOURCE_SIZE.value]
+    
     checksum = Checksum(
         checksum=resource[ResourceMap.SHA1_CHECKSUM.value],
         algorithm="SHA-1"
@@ -108,7 +109,8 @@ def system_metadata_factory(package_id: str, resource: tuple) -> SysMeta:
         access_policy=access_policy,
         media_type=media_type,
         series_id=series_id,
-        file_name=file_name
+        file_name=file_name,
+        replication_policy=replication_policy
     )
 
     return sys_meta
