@@ -159,7 +159,8 @@ class ResourceRegistry:
         Returns:
             Sequence[Row[Any]]: A sequence of rows containing the resource and its associated metadata.
         """
-        columns = ("resource_type, resource_id, doi, filename, date_created, sha1_checksum, md5_checksum, format_type, data_format, resource_size")
+        columns = ("resource_type, resource_id, doi, filename, date_created, sha1_checksum, md5_checksum, "
+                   "format_type, data_format, resource_size, principal_owner")
         select = (f"SELECT {columns} FROM datapackagemanager.resource_registry "
                   f"WHERE scope = '{scope}' AND "
                   f"identifier = '{identifier}' AND "

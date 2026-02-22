@@ -89,6 +89,12 @@ def _get_package_resources(resource_registry: ResourceRegistry, scope: str, iden
             else None
         )
         resource_size = resource[ResourceMap.RESOURCE_SIZE.value]
+        principal_owner = (
+            resource[ResourceMap.PRINCIPAL_OWNER.value].strip()
+            if resource[ResourceMap.PRINCIPAL_OWNER.value] is not None
+            else None
+        )
+
         r = (
             resource_type,
             resource_id,
@@ -100,6 +106,7 @@ def _get_package_resources(resource_registry: ResourceRegistry, scope: str, iden
             format_type,
             data_format,
             resource_size,
+            principal_owner
         )
         resource_list.append(r)
 
@@ -119,6 +126,10 @@ def _get_resource_types(resources: list) -> dict:
     resource_types[ResourceType.DATA] = data_entities
 
     return resource_types
+
+
+def _get_package_principal_owner(resources: list) -> str | None:
+    return [r[ResourceMap.PRINCIPAL_OWNER] for r in resources if r[ResourceMap.RESOURCE_TYPE] == ResourceType.DATA_PACKAGE][0]
 
 
 def _get_package_doi(resources: list) -> str | None:
@@ -162,6 +173,7 @@ class Package:
             msg = f"Data package \"{pid}\" was not found on PASTA."
             raise GMNAdapterDataPackageNotFound(msg) from e
         self._resource_types = _get_resource_types(self._resources)
+        self._principal_owner = _get_package_principal_owner(self._resources)
         self._doi = _get_package_doi(self._resources)
         self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)
         if self._is_gmn_candidate():
@@ -177,7 +189,8 @@ class Package:
                 hashlib.md5(self._ore).hexdigest(),
                 "http://www.openarchives.org/ore/terms",
                 "application/xml",
-                len(self._ore)
+                len(self._ore),
+                self._principal_owner
             )
             self._resources.append(resource)
         else:

@@ -26,4 +26,5 @@ class ResourceMap(IntEnum):
     FORMAT_TYPE = 7
     DATA_FORMAT = 8
     RESOURCE_SIZE = 9
+    PRINCIPAL_OWNER = 10
 
