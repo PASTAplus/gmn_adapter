@@ -23,7 +23,7 @@ from gmn_adapter.models.pasta.resource_type import ResourceType
 logger = daiquiri.getLogger(__name__)
 
 
-def get_ore(resources: list[tuple]) -> bytes:
+def get_ore(resources: list[list]) -> bytes:
     """
     Generates a DataONE ORE (Object Reuse and Exchange) resource map in XML format.
 
