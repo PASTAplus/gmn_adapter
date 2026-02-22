@@ -31,11 +31,11 @@ class Client:
     def __init__(self, node: str):
 
         match node:
-            case "EDI":
+            case "urn:node:EDI":
                 base_url = Config.GMN_EDI_BASE_URL
                 crt = Config.GMN_EDI_CERT_PATH
                 key = Config.GMN_EDI_KEY_PATH
-            case "LTER":
+            case "urn:node:LTER":
                 base_url = Config.GMN_LTER_BASE_URL
                 crt = Config.GMN_LTER_CERT_PATH
                 key = Config.GMN_LTER_KEY_PATH
