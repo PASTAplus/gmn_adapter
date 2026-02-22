@@ -46,6 +46,7 @@ def exists_in_gmn(package: Package, verbose: int=0) -> bool:
     Throws:
         GMNAdapterPartialDataPackageExists: If a partial data package exists in GMN.
     """
+    return False
     gmn_client = Client(node=Config.GMN_NODE)
 
     missing_resources = []
@@ -70,7 +71,9 @@ def create(package: Package, repair: bool=False, verbose: int=0) -> None:
     """Create a new data package in GMN."""
     print(package)
     for resource in package.resources:
-        sysmeta = system_metadata_factory(resource=resource)
+        if resource[ResourceMap.RESOURCE_TYPE.value] != ResourceType.DATA_PACKAGE:
+            sysmeta = system_metadata_factory(package_id=package.pid, resource=resource)
+            print(sysmeta.model_dump_json(indent=4))
 
 
 def update(predecessor: Package, package: Package, repair: bool=False, verbose: int=0) -> None:
