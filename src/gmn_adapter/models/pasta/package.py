@@ -16,11 +16,14 @@ import hashlib
 from datetime import datetime, timezone
 
 import daiquiri
+from lxml import etree
+import requests
 
 from sqlalchemy import Engine
 
 from gmn_adapter.exceptions import (
-    GMNAdapterDataPackageNotFound, GMNAdapterDataPackageResourcesNotFound, GMNAdapterPackageIsNotGMNCandidate
+    GMNAdapterDataPackageNotFound, GMNAdapterDataPackageResourcesNotFound, GMNAdapterPackageIsNotGMNCandidate,
+    GMNAdapterError
 )
 import gmn_adapter.iam.client as iam_client
 import gmn_adapter.models.dataone.ore as ore
@@ -32,7 +35,7 @@ from gmn_adapter.models.pasta.resource_type import ResourceType
 logger = daiquiri.getLogger(__name__)
 
 
-def _get_package_resources(resource_registry: ResourceRegistry, scope: str, identifier: str, revision: str) -> list[tuple]:
+def _get_package_resources(resource_registry: ResourceRegistry, scope: str, identifier: str, revision: str) -> list[list]:
     """
     Retrieve resources for a PASTA data package.
 
@@ -95,7 +98,7 @@ def _get_package_resources(resource_registry: ResourceRegistry, scope: str, iden
             else None
         )
 
-        r = (
+        r = [
             resource_type,
             resource_id,
             doi,
@@ -107,25 +110,10 @@ def _get_package_resources(resource_registry: ResourceRegistry, scope: str, iden
             data_format,
             resource_size,
             principal_owner
-        )
+        ]
         resource_list.append(r)
 
     return resource_list
-
-
-def _get_resource_types(resources: list) -> dict:
-    resource_types = {}
-    data_entities = []
-    for resource in resources:
-        resource_type = ResourceType(resource[0])
-        resource_id = resource[1]
-        if resource_type == ResourceType.DATA:
-            data_entities.append(resource_id)
-        else:
-            resource_types[resource_type] = resource_id
-    resource_types[ResourceType.DATA] = data_entities
-
-    return resource_types
 
 
 def _get_package_principal_owner(resources: list) -> str | None:
@@ -135,6 +123,39 @@ def _get_package_principal_owner(resources: list) -> str | None:
 def _get_package_doi(resources: list) -> str | None:
     return [r[ResourceMap.DOI] for r in resources if r[ResourceMap.RESOURCE_TYPE] == ResourceType.DATA_PACKAGE][0]
 
+
+def _get_resource_id(resources: list, resource_type: ResourceType) -> str | None:
+    return [r[ResourceMap.RESOURCE_ID] for r in resources if r[ResourceMap.RESOURCE_TYPE] == resource_type][0]
+
+
+def _set_resource_size(resources: list, resource_id: str, size: int):
+    resource = [r for r in resources if r[ResourceMap.RESOURCE_ID] == resource_id][0]
+    resources.remove(resource)
+    resource[ResourceMap.RESOURCE_SIZE] = size
+    resources.append(resource)
+
+
+def _get_resource_bytes(resource_id: str) -> bytes:
+    r = requests.get(resource_id)
+    r.raise_for_status()
+    return r.content
+
+
+def _get_replication_policy(eml: bytes) -> tuple | None:
+    namespace_dict = {
+        "eml": "eml://ecoinformatics.org/eml-2.1.1",
+        "d1v1": "http://ns.dataone.org/service/types/v1"
+    }
+    root = etree.fromstring(eml)
+    replication_policy = root.find("additionalMetadata/metadata/d1v1:replicationPolicy", namespace_dict)
+    if replication_policy is not None:
+        num_replicas = replication_policy.get("numberReplicas")
+        rep_allowed = replication_policy.get("replicationAllowed")
+        preferred_node = replication_policy.findtext(".//preferredMemberNode")
+        blocked_node = replication_policy.findtext(".//blockedMemberNode")
+        return rep_allowed, num_replicas, preferred_node, blocked_node
+    else:
+        return None
 
 
 class Package:
@@ -168,18 +189,20 @@ class Package:
 
         # Retrieve resources (including resource metadata) for the data package
         try:
-            self._resources: list[tuple] = _get_package_resources(resource_registry, self._scope, self._identifier, self._revision)
-        except GMNAdapterDataPackageResourcesNotFound as e:
+            self._resources: list[list] = _get_package_resources(resource_registry, self._scope, self._identifier, self._revision)
+        except GMNAdapterDataPackageResourcesNotFound:
             msg = f"Data package \"{pid}\" was not found on PASTA."
-            raise GMNAdapterDataPackageNotFound(msg) from e
-        self._resource_types = _get_resource_types(self._resources)
+            raise GMNAdapterDataPackageNotFound(msg)
         self._principal_owner = _get_package_principal_owner(self._resources)
         self._doi = _get_package_doi(self._resources)
         self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)
+        self._replication_policy = None
+
+        # Only perform resource-specific processing if the package is a GMN candidate
         if self._is_gmn_candidate():
             # Generate ORE document for the data package and add to resources
             self._ore: bytes = ore.get_ore(resources=self._resources)
-            resource = (
+            resource = [
                 ResourceType.ORE,
                 self._doi,
                 None,
@@ -191,8 +214,33 @@ class Package:
                 "application/xml",
                 len(self._ore),
                 self._principal_owner
-            )
+            ]
             self._resources.append(resource)
+
+            # Generate metadata size and replication policy for the data package and add to resources
+            resource_id = _get_resource_id(self._resources, ResourceType.METADATA)
+            try:
+                eml = _get_resource_bytes(resource_id=resource_id)
+            except requests.exceptions.RequestException as e:
+                msg = f"Failed to retrieve resource {resource_id} when generating system metadata: {e}"
+                logger.error(msg)
+                raise GMNAdapterError(msg) from e
+            else:
+                eml_size = len(eml)
+                _set_resource_size(resources=self._resources, resource_id=resource_id, size=eml_size)
+                self._replication_policy = _get_replication_policy(eml=eml)
+
+            # Generate report size and add to resources
+            resource_id = _get_resource_id(self._resources, ResourceType.REPORT)
+            try:
+                report = _get_resource_bytes(resource_id=resource_id)
+            except requests.exceptions.RequestException as e:
+                msg = f"Failed to retrieve resource {resource_id} when generating system metadata: {e}"
+                logger.error(msg)
+                raise GMNAdapterError(msg) from e
+            else:
+                report_size = len(report)
+                _set_resource_size(resources=self._resources, resource_id=resource_id, size=report_size)
         else:
             msg = f"Package \"{pid}\" is not a GMN candidate."
             raise GMNAdapterPackageIsNotGMNCandidate(msg)
@@ -214,12 +262,12 @@ class Package:
         return self._pid
 
     @property
-    def resources(self) -> list:
-        return self._resources
+    def replication_policy(self) -> tuple:
+        return self._replication_policy
 
     @property
-    def resource_types(self) -> dict:
-        return self._resource_types
+    def resources(self) -> list:
+        return self._resources
 
     @property
     def doi(self) -> str:
