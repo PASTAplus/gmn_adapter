@@ -56,6 +56,8 @@ class Config:
 
     # DataONE/GMN configuration
     CN_BASE_URL = "https://cn.dataone.org/cn"
+    GMN_EDI_NODE = "urn:node:EDI"
+    GMN_LTER_NODE = "urn:node:LTER"
     GMN_NODE = "GMN_NODE"
     GMN_USER = "GMN_USER"
     GMN_PASSWD = "GMN_PASSWD"
