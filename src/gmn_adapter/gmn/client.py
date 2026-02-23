@@ -101,14 +101,14 @@ class Client:
             exists = True
         return exists
 
-    def create_object(self, pid: str, data: bytes, sys_meta: SysMeta, pass_through_url: str = None) -> None:
+    def create_object(self, pid: str, sys_meta: SysMeta, data: bytes=None, pass_through_url: str=None) -> None:
         """
         Create a GMN object with the given PID.
 
         Args:
             pid (str): The persistent identifier (PID) of the object.
-            data (bytes): The data to create an object with.
             sys_meta (SysMeta): The system metadata object.
+            data (bytes): The data to create an object with.
             pass_through_url (str, optional): The url to the PASTA data entity. Defaults to None.
         """
         self.client.create(
@@ -118,8 +118,24 @@ class Client:
             vendorSpecific=pass_through_url
         )
 
-    def update_object(self, pid: str, data: bytes, predecessor_pid: str, sys_meta: SysMeta, pass_through_url: str = None):
-        pass
+    def update_object(self, predecessor_pid: str, pid: str, sys_meta: SysMeta, data: bytes=None, pass_through_url: str=None):
+        """
+        Update a GMN object pid with the given new PID.
+
+        Args:
+            predecessor_pid (str): The persistent identifier (PID) of the predecessor object.
+            pid (str): The persistent identifier (PID) of the object.
+            sys_meta (SysMeta): The system metadata object.
+            data (bytes): The data to create an object with.
+            pass_through_url (str, optional): The url to the PASTA data entity. Defaults to None.
+        """
+        self.client.update(
+            pid=predecessor_pid,
+            newPid=pid,
+            obj=BytesIO(data),
+            sysmeta_pyxb=sys_meta,
+            vendorSpecific=pass_through_url
+        )
 
     def delete_object(self, pid: str):
         pass
