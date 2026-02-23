@@ -26,6 +26,7 @@ from gmn_adapter.cli.synchronize import synchronize_to_gmn
 from gmn_adapter.exceptions import GMNAdapterDataPackageExists, GMNAdapterPartialDataPackageExists, \
     GMNAdapterNonSynchronizedAncestor, GMNAdapterPackageIsNotGMNCandidate, GMNAdapterError, \
     GMNAdapterDataPackageNotFound
+from gmn_adapter.gmn.client import Client
 from gmn_adapter.lock import Lock
 from gmn_adapter.models.adapter.adapter_db import QueueManager
 from gmn_adapter.models.pasta.package import Package
@@ -54,6 +55,8 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
     else:
         lock.acquire()
         logger.warning(f"Lock file {lock.lock_file} acquired")
+
+    gmn_client = Client(node=Config.GMN_NODE)
 
     pasta_db_engine = get_pasta_db_engine()
     queue_manager = QueueManager(Config.QUEUE)
@@ -92,6 +95,7 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
                     package=package,
                     queue_manager=queue_manager,
                     pasta_db_engine=pasta_db_engine,
+                    gmn_client=gmn_client,
                     repair=repair,
                     dryrun=dryrun,
                     verbose=verbose
