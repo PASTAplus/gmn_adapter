@@ -13,8 +13,13 @@ Author:
 Created:
     2026-01-19
 """
+from io import BytesIO
+
 import click
 import daiquiri
+import d1_common
+import d1_client.cnclient_2_0
+import d1_client.mnclient_2_0
 from sqlalchemy import Engine
 
 from gmn_adapter.cli.system_metadata import system_metadata_factory
@@ -30,12 +35,13 @@ from gmn_adapter.models.pasta.resource_type import ResourceType
 logger = daiquiri.getLogger(__name__)
 
 
-def exists_in_gmn(package: Package, verbose: int=0) -> bool:
+def exists_in_gmn(package: Package, gmn_client: Client, verbose: int=0) -> bool:
     """
     Check if a data package exists in GMN.
 
     Args:
         package (Package): PASTA data package to check.
+        gmn_client (Client): GMN client.
         verbose (int): Verbosity level for logging. Default is 0.
 
     Returns:
@@ -49,11 +55,11 @@ def exists_in_gmn(package: Package, verbose: int=0) -> bool:
     missing_resources = []
     object_count = 0
     for resource in package.resources:
-        if resource[ResourceMap.RESOURCE_TYPE.value] != ResourceType.DATA_PACKAGE:
-            if gmn_client.object_exists(resource[ResourceMap.RESOURCE_ID.value]):
+        if resource[ResourceMap.RESOURCE_TYPE] != ResourceType.DATA_PACKAGE:
+            if gmn_client.object_exists(resource[ResourceMap.RESOURCE_ID]):
                 object_count += 1
             else:
-                missing_resources.append(resource[ResourceMap.RESOURCE_ID.value])
+                missing_resources.append(resource[ResourceMap.RESOURCE_ID])
 
     if object_count == len(package.resources) - 1:
         return True
@@ -64,24 +70,75 @@ def exists_in_gmn(package: Package, verbose: int=0) -> bool:
         raise GMNAdapterPartialDataPackageExists(msg, missing_resources)
 
 
-def create(package: Package, repair: bool=False, verbose: int=0) -> None:
+def create(package: Package, gmn_client: Client, repair: bool=False, verbose: int=0) -> None:
     """Create a new data package in GMN."""
-    print(package)
     for resource in package.resources:
-        if resource[ResourceMap.RESOURCE_TYPE.value] != ResourceType.DATA_PACKAGE:
-            sysmeta = system_metadata_factory(package_id=package.pid, replication_policy=package.replication_policy, resource=resource)
+        if resource[ResourceMap.RESOURCE_TYPE] != ResourceType.DATA_PACKAGE:
+            sys_meta = system_metadata_factory(package_id=package.pid, replication_policy=package.replication_policy, resource=resource)
+            if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE:
+                data = package.ore
+                pass_through_url = None
+            else:
+                data = None
+                pass_through_url = resource[ResourceMap.RESOURCE_ID]
+
+            gmn_client.create_object(
+                pid=resource[ResourceMap.RESOURCE_ID],
+                sys_meta=sys_meta,
+                data=data,
+                pass_through_url=pass_through_url
+            )
 
 
-def update(predecessor: Package, package: Package, repair: bool=False, verbose: int=0) -> None:
+
+def update(predecessor: Package, package: Package, gmn_client: Client, repair: bool=False, verbose: int=0) -> None:
     """Update an existing data package in GMN."""
-    print(predecessor)
-    print(package)
+    predecessor_ore_pid = predecessor_metadata_pid = None
+    for resource in predecessor.resources:
+        match resource[ResourceMap.RESOURCE_TYPE]:
+            case ResourceType.ORE:
+                predecessor_ore_pid = resource[ResourceMap.RESOURCE_ID]
+            case ResourceType.METADATA:
+                predecessor_metadata_pid = resource[ResourceMap.RESOURCE_ID]
+            case _:
+                continue
+
+    for resource in package.resources:
+        if resource[ResourceMap.RESOURCE_TYPE] != ResourceType.DATA_PACKAGE:
+            sys_meta = system_metadata_factory(package_id=package.pid, replication_policy=package.replication_policy, resource=resource)
+            if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE:
+                # Use update to build obsolescence chain for ORE
+                gmn_client.update_object(
+                    predecessor_pid=predecessor_ore_pid,
+                    pid=resource[ResourceMap.RESOURCE_ID],
+                    sys_meta=sys_meta,
+                    data=package.ore,
+                    pass_through_url=None
+                )
+            elif resource[ResourceMap.RESOURCE_TYPE] == ResourceType.METADATA:
+                # Use update to build obsolescence chain for METADATA
+                gmn_client.update_object(
+                    predecessor_pid=predecessor_metadata_pid,
+                    pid=resource[ResourceMap.RESOURCE_ID],
+                    sys_meta=sys_meta,
+                    data=None,
+                    pass_through_url=resource[ResourceMap.RESOURCE_ID]
+                )
+            else:
+                # REPORT and DATA do not have obsolescence chains
+                gmn_client.create_object(
+                    pid=resource[ResourceMap.RESOURCE_ID],
+                    sys_meta=sys_meta,
+                    data=None,
+                    pass_through_url=resource[ResourceMap.RESOURCE_ID]
+                )
 
 
 def synchronize_to_gmn(
     package: Package,
     queue_manager: QueueManager,
     pasta_db_engine: Engine,
+    gmn_client: Client,
     repair: bool=False,
     dryrun: bool=False,
     verbose: int=0
@@ -93,6 +150,7 @@ def synchronize_to_gmn(
         package (Package): PASTA data package to synchronize with GMN.
         queue_manager (QueueManager): Adapter queue manager.
         pasta_db_engine (Engine): SQLAlchemy engine instance of the PASTA database.
+        gmn_client (Client): GMN client instance.
         repair (bool): If True, attempt to repair an incomplete data package in the GMN.
         dryrun (bool): If True, perform a dry run without making changes to GMN.
         verbose (int): Verbosity level.
@@ -110,7 +168,7 @@ def synchronize_to_gmn(
         raise GMNAdapterNonSynchronizedAncestor(f"Package {package.pid} has a non-synchronized ancestor")
 
     try:
-        if exists_in_gmn(package=package):  # re-throws GMNAdapterPartialDataPackageExists
+        if exists_in_gmn(package=package, gmn_client=gmn_client):  # re-throws GMNAdapterPartialDataPackageExists
             raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
     except GMNAdapterPartialDataPackageExists as e:
         if not repair:
@@ -123,10 +181,10 @@ def synchronize_to_gmn(
             click.echo(f"Updating packages ({predecessor.pid}, {package.pid})")
         logger.info(f"Updating packages ({predecessor.pid}, {package.pid})")
         if not dryrun:
-            update(predecessor, package, repair, verbose)
+            update(predecessor, package, gmn_client, repair, verbose)
     else:
         if verbose > 0:
             click.echo(f"Creating package {package.pid}")
         logger.info(f"Creating package {package.pid}")
         if not dryrun:
-            create(package, repair, verbose)
+            create(package, gmn_client, repair, verbose)
