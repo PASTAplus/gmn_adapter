@@ -13,13 +13,8 @@ Author:
 Created:
     2026-01-19
 """
-from io import BytesIO
-
 import click
 import daiquiri
-import d1_common
-import d1_client.cnclient_2_0
-import d1_client.mnclient_2_0
 from sqlalchemy import Engine
 
 from gmn_adapter.cli.system_metadata import system_metadata_factory
