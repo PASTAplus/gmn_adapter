@@ -23,6 +23,7 @@ import pytest
 from sqlalchemy import insert
 
 from gmn_adapter.config import Config
+from gmn_adapter.gmn.client import Client
 from gmn_adapter.models.adapter.adapter_db import Queue, QueueManager
 from gmn_adapter.models.adapter.event import Event
 from gmn_adapter.models.pasta.resource_registry import ResourceRegistry
@@ -48,6 +49,11 @@ def config():
         "db_host": "localhost",
         "db_port": "54320",
     }
+
+
+@pytest.fixture(scope="session")
+def gmn_client():
+    return Client(Config.GMN_NODE)
 
 
 @pytest.fixture(scope="function")
