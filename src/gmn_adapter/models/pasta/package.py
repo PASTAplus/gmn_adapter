@@ -278,8 +278,8 @@ class Package:
         return self._date_deactivated
 
     @property
-    def ore(self) -> str:
-        return self._ore.decode("utf-8")
+    def ore(self) -> bytes:
+        return self._ore
 
     def _is_gmn_candidate(self) -> bool:
         """
