@@ -23,17 +23,17 @@ from gmn_adapter.cli.synchronize import synchronize_to_gmn
 logger = daiquiri.getLogger(__name__)
 
 
-DESCENDANT = "knb-lter-ble.3.11"
-PACKAGE = "knb-lter-ble.3.10"
-PREDECESSOR = "knb-lter-ble.3.9"
-EXISTS = "knb-lter-ble.37.1"
+DESCENDANT = "edi.118.3"
+PACKAGE = "edi.118.2"
+PREDECESSOR = "edi.118.1"
+EXISTS = "edi.134.11"
 
 
 def test_synchronize_create(queue_manager, gmn_client, config):
     """Test that a new package is created in GMN."""
     pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     predecessor = Package(PREDECESSOR, pasta_db_engine)
-    synchronize_to_gmn(package=predecessor, queue_manager=queue_manager, gmn_client=gmn_client, pasta_db_engine=pasta_db_engine, dryrun=False)
+    synchronize_to_gmn(package=predecessor, queue_manager=queue_manager, gmn_client=gmn_client, pasta_db_engine=pasta_db_engine, dryrun=True)
 
 
 def test_synchronize_update(queue_manager, gmn_client, config):
@@ -41,7 +41,7 @@ def test_synchronize_update(queue_manager, gmn_client, config):
     queue_manager.dequeue(PREDECESSOR)
     pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     package = Package(PACKAGE, pasta_db_engine)
-    synchronize_to_gmn(package=package, queue_manager=queue_manager, gmn_client=gmn_client, pasta_db_engine=pasta_db_engine, dryrun=False)
+    synchronize_to_gmn(package=package, queue_manager=queue_manager, gmn_client=gmn_client, pasta_db_engine=pasta_db_engine, dryrun=True)
 
 
 def test_synchronize_runtime_error(queue_manager, gmn_client, config):
