@@ -333,7 +333,9 @@ class Package:
             str: package details
         """
         resources = ""
-        for resource_type, resource_id in self._resource_types.items():
+        for resource in self._resources:
+            resource_type = resource[ResourceMap.RESOURCE_TYPE]
+            resource_id = resource[ResourceMap.RESOURCE_ID]
             resources += f"    {resource_type}: {resource_id}\n"
 
         package_details = (
