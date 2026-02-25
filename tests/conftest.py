@@ -88,10 +88,10 @@ def event():
     Create a test event for use in tests.
     """
 
-    PACKAGE = "knb-lter-nin.100.1"
+    PACKAGE = "edi.100000.1"
     TIMESTAMP = datetime.now(timezone.utc)
     OWNER = "EDI-166ebf44ac70835c7ebce152e2219ae5eab16418"
-    DOI = "doi:10.6073/pasta/0675d3602ff57f24838ca8d14d7f3961"
+    DOI = "doi:10.6073/pasta/a30d5b90676008cfb7987f31b4343a35"
 
     return Event(
         package=PACKAGE,
