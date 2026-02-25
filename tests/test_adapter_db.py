@@ -27,21 +27,21 @@ import utils.sqlite_utils as su
 logger = daiquiri.getLogger(__name__)
 
 # Constants derived from tests/data/adapter_queue.csv
-QUEUE_COUNT = 602
-HEAD_PID = "cos-spu.10.1"
-TAIL_PID = "edi.1847.3"
-NEWEST_PID = "edi.1847.3"
-NEWEST_DATETIME = datetime(2026, 2, 17, 17, 35, 34, 484000)
+QUEUE_COUNT = 3345
+HEAD_PID = "edi.5.1"
+TAIL_PID = "edi.2270.1"
+NEWEST_PID = "edi.2270.1"
+NEWEST_DATETIME = datetime(2026, 2, 18, 19, 59, 59, 50000)
 EVENT_PID ="edi.2101.2"
 EVENT_DATETIME = datetime(2025, 10, 9, 16, 42, 33, 299000)
 EVENT_OWNER = "EDI-b162c0e7a462bf9d81753aad49a1b8ff7e481c1d"
 EVENT_DOI = "doi:10.6073/pasta/818b8bf1d93b81cc7c5124f9df81ce01"
 EVENT_DEQUEUED = False
 EVENT_INVALID_PID = "icarus.1.1"
-DEQUEUED_PID = "edi.2174.1"
-DESCENDANT = "knb-lter-ble.3.11"
-PACKAGE = "knb-lter-ble.3.10"
-PREDECESSOR = "knb-lter-ble.3.9"
+DEQUEUED_PID = "edi.7.1"
+DESCENDANT = "edi.118.3"
+PACKAGE = "edi.118.2"
+PREDECESSOR = "edi.118.1"
 
 
 def test_new_queue_manager(queue_manager):

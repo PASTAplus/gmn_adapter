@@ -22,13 +22,13 @@ from gmn_adapter.models.adapter.event import Event
 
 logger = daiquiri.getLogger(__name__)
 
-PACKAGE = "knb-lter-nin.1.1"
-SCOPE = "knb-lter-nin"
+PACKAGE = "edi.1.1"
+SCOPE = "edi"
 IDENTIFIER = 1
 REVISION = 1
-TIMESTAMP = datetime.fromisoformat("2025-12-26 12:34:56.2345")
+TIMESTAMP = datetime.fromisoformat("2016-12-01 12:55:08.778000")
 OWNER = "EDI-166ebf44ac70835c7ebce152e2219ae5eab16418"
-DOI = "doi:10.6073/pasta/0675d3602ff57f24838ca8d14d7f3961"
+DOI = "doi:10.6073/pasta/a30d5b90676008cfb7987f31b4343a35"
 
 
 def test_event():
