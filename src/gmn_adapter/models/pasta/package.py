@@ -18,8 +18,8 @@ from datetime import datetime, timezone
 import daiquiri
 from lxml import etree
 import requests
-
 from sqlalchemy import Engine
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from gmn_adapter.exceptions import (
     GMNAdapterDataPackageNotFound, GMNAdapterDataPackageResourcesNotFound, GMNAdapterPackageIsNotGMNCandidate,
@@ -135,6 +135,11 @@ def _set_resource_size(resources: list, resource_id: str, size: int):
     resources.append(resource)
 
 
+@retry(
+    retry=retry_if_exception_type((requests.exceptions.ConnectionError, requests.exceptions.Timeout)),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(min=1, max=10),
+)
 def _get_resource_bytes(resource_id: str) -> bytes:
     r = requests.get(resource_id)
     r.raise_for_status()
