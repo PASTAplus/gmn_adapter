@@ -33,6 +33,7 @@ click = ">=8.3.1,<9"
 pydantic = ">=2.12.5,<3"
 pydantic-core = ">=2.41.5,<3"
 lxml = ">=6.0.2,<7"
+tenacity = ">=9.1.4,<10"
 
 [tool.pixi.feature.dev.dependencies]
 pytest = "*"
