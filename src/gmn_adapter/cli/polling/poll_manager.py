@@ -41,7 +41,7 @@ daiquiri.setup(
 logger = daiquiri.getLogger(__name__)
 
 
-def poll_manager(bootstrap: bool, limit: int, scope: str, timestamp: str, verbose: int,) -> int:
+def poll_manager(bootstrap: bool, limit: int, node: str, timestamp: str, verbose: int, ) -> int:
     """Poll the PASTA data package manager for new resources."""
 
     lock = Lock(Config.POLL_LOCK)
@@ -52,8 +52,13 @@ def poll_manager(bootstrap: bool, limit: int, scope: str, timestamp: str, verbos
         lock.acquire()
         logger.warning(f"Lock file {lock.lock_file} acquired")
 
-    if scope not in ["EDI", "LTER"]:
-        raise ValueError(f"Invalid scope: {scope}")
+    match node:
+        case Config.GMN_EDI_NODE:
+            scope = "EDI"
+        case Config.GMN_LTER_NODE:
+            scope = "LTER"
+        case _:
+            raise ValueError(f"Invalid node: {node}")
 
     if bootstrap:
         if timestamp is None:
@@ -104,7 +109,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_bootstrap = "Bootstrap the adapter queue database."
 help_conf = "Current configuration settings."
 help_limit = "Chunk limit on the number of polled resources per interation (default=100)."
-help_scope = "PASTA based scopes to poll (EDI or LTER)."
+help_node = "GMN member node."
 help_timestamp = "ISO 8601 timestamp to start polling from."
 help_verbose = "Send output to standard out (-v or -vv or -vvv for increasing output)."
 help_version = "Output GMN adapter version and exit."
@@ -113,11 +118,11 @@ help_version = "Output GMN adapter version and exit."
 @click.option("--bootstrap", is_flag=True, default=False, help=help_bootstrap)
 @click.option("--conf", is_flag=True, default=False, help=help_conf)
 @click.option("--limit", type=int, default=100, help=help_limit)
-@click.option("--scope", type=str, default=Config.GMN_NODE, help=help_scope)
+@click.option("--node", type=str, default=Config.GMN_NODE, help=help_node)
 @click.option("--timestamp",type=str, default=None, help=help_timestamp)
 @click.option("-v", "--verbose", count=True, help=help_verbose)
 @click.option("--version", is_flag=True, default=False, callback=print_version, expose_value=False, is_eager=True, help=help_version)
-def cli(bootstrap: bool, conf: bool, limit: int, scope: str, timestamp: str, verbose: int,):
+def cli(bootstrap: bool, conf: bool, limit: int, node: str, timestamp: str, verbose: int, ):
     """CLI wrapper for the poll_manager function.\n
 
     The poll_manager function polls the PASTA data package manager for new resources and
@@ -131,7 +136,7 @@ def cli(bootstrap: bool, conf: bool, limit: int, scope: str, timestamp: str, ver
         status = poll_manager(
             bootstrap=bootstrap,
             limit=limit,
-            scope=scope,
+            node=node,
             timestamp=timestamp,
             verbose=verbose,
         )
