@@ -80,7 +80,8 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
         except GMNAdapterDataPackageNotFound:
             if verbose > 0:
                 click.echo(f"Data package \"{pid}\" was not found on PASTA - skipping.")
-            logger.warning(f"Data package \"{pid}\" was not found on PASTA - skipping..")
+            logger.error(f"Data package \"{pid}\" was not found on PASTA - skipping..")
+            sys.exit(1)
         except GMNAdapterPackageIsNotGMNCandidate as e:
             if verbose > 0:
                 click.echo(f"Package \"{pid}\" is not a GMN candidate - skipping.")
