@@ -184,7 +184,7 @@ class Package:
             pid (str): PASTA PID in the format scope.identifier.revision
             pasta_db_engine (Engine): SQLAlchemy engine instance
 
-        Throws: ValueError, GMNAdapterDataPackageNotFound
+        Throws: ValueError, GMNAdapterDataPackageNotFound, GMNAdapterPackageIsNotGMNCandidate
         """
         # Resource registry instance for accessing PASTA datapackagemanager.resource_registry DB model
         resource_registry = ResourceRegistry(pasta_db_engine=pasta_db_engine)
@@ -201,54 +201,21 @@ class Package:
         self._principal_owner = _get_package_principal_owner(self._resources)
         self._doi = _get_package_doi(self._resources)
         self._date_deactivated = resource_registry.get_date_deactivated(self._scope, self._identifier, self._revision)
-        self._replication_policy = None
 
-        # Only perform resource-specific processing if the package is a GMN candidate
-        if self._is_gmn_candidate():
-            # Generate ORE document for the data package and add to resources
-            self._ore: bytes = ore.get_ore(resources=self._resources)
-            resource = [
-                ResourceType.ORE,
-                self._doi,
-                None,
-                f"{self._pid}-ore.xml",
-                datetime.now(timezone.utc).isoformat(),
-                hashlib.sha1(self._ore).hexdigest(),
-                hashlib.md5(self._ore).hexdigest(),
-                "http://www.openarchives.org/ore/terms",
-                "application/xml",
-                len(self._ore),
-                self._principal_owner
-            ]
-            self._resources.append(resource)
-
-            # Generate metadata size and replication policy for the data package and add to resources
-            resource_id = _get_resource_id(self._resources, ResourceType.METADATA)
-            try:
-                eml = _get_resource_bytes(resource_id=resource_id)
-            except requests.exceptions.RequestException as e:
-                msg = f"Failed to retrieve resource {resource_id} when generating system metadata: {e}"
-                logger.error(msg)
-                raise GMNAdapterError(msg) from e
-            else:
-                eml_size = len(eml)
-                _set_resource_size(resources=self._resources, resource_id=resource_id, size=eml_size)
-                self._replication_policy = _get_replication_policy(eml=eml)
-
-            # Generate report size and add to resources
-            resource_id = _get_resource_id(self._resources, ResourceType.REPORT)
-            try:
-                report = _get_resource_bytes(resource_id=resource_id)
-            except requests.exceptions.RequestException as e:
-                msg = f"Failed to retrieve resource {resource_id} when generating system metadata: {e}"
-                logger.error(msg)
-                raise GMNAdapterError(msg) from e
-            else:
-                report_size = len(report)
-                _set_resource_size(resources=self._resources, resource_id=resource_id, size=report_size)
-        else:
+        # Validate that this is a GMN candidate during construction
+        if not self._is_gmn_candidate():
             msg = f"Package \"{pid}\" is not a GMN candidate."
             raise GMNAdapterPackageIsNotGMNCandidate(msg)
+
+        # Lazy-loaded attributes (initialized on first access)
+        self._ore: bytes | None = None
+        self._ore_initialized: bool = False
+        self._eml: bytes | None = None
+        self._eml_initialized: bool = False
+        self._report: bytes | None = None
+        self._report_initialized: bool = False
+        self._replication_policy: tuple | None = None
+        self._replication_policy_initialized: bool = False
 
     @property
     def scope(self) -> str:
@@ -267,11 +234,19 @@ class Package:
         return self._pid
 
     @property
-    def replication_policy(self) -> tuple:
+    def replication_policy(self) -> tuple | None:
+        """Lazy-load replication policy from EML metadata."""
+        if not self._replication_policy_initialized:
+            # This will trigger EML fetching which extracts replication policy
+            _ = self._get_eml()
+            self._replication_policy_initialized = True
         return self._replication_policy
 
     @property
     def resources(self) -> list:
+        """Returns resources list with lazy-loaded ORE resource appended."""
+        # Ensure ORE resource is in the list before returning
+        _ = self.ore
         return self._resources
 
     @property
@@ -284,7 +259,62 @@ class Package:
 
     @property
     def ore(self) -> bytes:
+        """Lazy-load ORE document and add to resources."""
+        if not self._ore_initialized:
+            self._ore = ore.get_ore(resources=self._resources)
+            resource = [
+                ResourceType.ORE,
+                self._doi,
+                None,
+                f"{self._pid}-ore.xml",
+                datetime.now(timezone.utc).isoformat(),
+                hashlib.sha1(self._ore).hexdigest(),
+                hashlib.md5(self._ore).hexdigest(),
+                "http://www.openarchives.org/ore/terms",
+                "application/xml",
+                len(self._ore),
+                self._principal_owner
+            ]
+            self._resources.append(resource)
+            self._ore_initialized = True
         return self._ore
+
+    def _get_eml(self) -> bytes:
+        """Lazy-load EML metadata and update resource size."""
+        if not self._eml_initialized:
+            resource_id = _get_resource_id(self._resources, ResourceType.METADATA)
+            try:
+                self._eml = _get_resource_bytes(resource_id=resource_id)
+            except requests.exceptions.RequestException as e:
+                msg = f"Failed to retrieve resource {resource_id} when generating system metadata: {e}"
+                logger.error(msg)
+                raise GMNAdapterError(msg) from e
+            eml_size = len(self._eml)
+            _set_resource_size(resources=self._resources, resource_id=resource_id, size=eml_size)
+            self._replication_policy = _get_replication_policy(eml=self._eml)
+            self._eml_initialized = True
+        return self._eml
+
+    def _get_report(self) -> bytes:
+        """Lazy-load quality report and update resource size."""
+        if not self._report_initialized:
+            resource_id = _get_resource_id(self._resources, ResourceType.REPORT)
+            try:
+                self._report = _get_resource_bytes(resource_id=resource_id)
+            except requests.exceptions.RequestException as e:
+                msg = f"Failed to retrieve resource {resource_id} when generating system metadata: {e}"
+                logger.error(msg)
+                raise GMNAdapterError(msg) from e
+            report_size = len(self._report)
+            _set_resource_size(resources=self._resources, resource_id=resource_id, size=report_size)
+            self._report_initialized = True
+        return self._report
+
+    def ensure_resources_loaded(self):
+        """Ensure all lazy-loaded resources are fetched and resource list is complete."""
+        _ = self._get_eml()
+        _ = self._get_report()
+        _ = self.ore
 
     def _is_gmn_candidate(self) -> bool:
         """

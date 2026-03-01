@@ -75,6 +75,8 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
             click.echo(f"Package {pid} is not a GMN candidate - skipping.")
         logger.warning(f"Package {pid} is not a GMN candidate - skipping.")
     else:
+        # Ensure all resources are loaded before synchronization
+        package.ensure_resources_loaded()
         try:
             synchronize_to_gmn(
                 package=package,

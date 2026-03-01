@@ -177,6 +177,8 @@ def synchronize_to_gmn(
     if (predecessor := queue_manager.get_predecessor(package=package.pid)) is not None:
         predecessor_pid = str(predecessor.package)
         predecessor = Package(pid=predecessor_pid, pasta_db_engine=pasta_db_engine)
+        # Ensure all resources are loaded for predecessor before update
+        predecessor.ensure_resources_loaded()
         if verbose > 0:
             click.echo(f"Updating packages ({predecessor.pid}, {package.pid})")
         logger.info(f"Updating packages ({predecessor.pid}, {package.pid})")

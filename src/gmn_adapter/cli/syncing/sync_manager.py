@@ -91,6 +91,8 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
             if verbose > 0:
                 click.echo(f"Attempting to synchronize package: {package.pid}")
             logger.info(f"Attempting to synchronize package: {package.pid}")
+            # Ensure all resources are loaded before synchronization
+            package.ensure_resources_loaded()
             try:
                 synchronize_to_gmn(
                     package=package,
