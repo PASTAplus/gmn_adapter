@@ -141,7 +141,7 @@ def _set_resource_size(resources: list, resource_id: str, size: int):
     wait=wait_exponential(min=1, max=10),
 )
 def _get_resource_bytes(resource_id: str) -> bytes:
-    r = requests.get(resource_id)
+    r = requests.get(resource_id, timeout=(5, 30))  # Connect and read timeout
     r.raise_for_status()
     return r.content
 
