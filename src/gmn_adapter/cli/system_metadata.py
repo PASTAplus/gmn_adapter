@@ -60,7 +60,8 @@ def system_metadata_factory(package_id: str, replication_policy: tuple, resource
     format_id = None
     media_type = None
     file_name = None
-    series_id = package_id.rsplit('.', 1)[0]
+    series_id = None
+    # series_id = package_id.rsplit('.', 1)[0]
     match resource_type:
         case ResourceType.METADATA:
             format_id = resource[ResourceMap.FORMAT_TYPE.value]
