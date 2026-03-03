@@ -108,6 +108,8 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
             if verbose > 0:
                 click.echo(f"Package \"{pid}\" successfully synchronized to GMN.")
             logger.info(f"Package \"{pid}\" successfully synchronized to GMN.")
+            if not dryrun:
+                queue_manager.dequeue(package.pid)
 
     lock.release()
     logger.warning(f"Lock file {lock.lock_file} released")
