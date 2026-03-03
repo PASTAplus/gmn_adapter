@@ -181,7 +181,7 @@ class SysMeta(BaseModel):
 
         media_type = None
         if system_metadata.mediaType is not None:
-            media_type = system_metadata.mediaType.value()
+            media_type = system_metadata.mediaType.name
 
         file_name = None
         if system_metadata.fileName is not None:
@@ -287,7 +287,9 @@ class SysMeta(BaseModel):
             system_metadata.seriesId = sys_meta.series_id
 
         if sys_meta.media_type is not None:
-            system_metadata.mediaType = sys_meta.media_type
+            media_type = dataoneTypes_v2_0.mediaType()
+            media_type.name = sys_meta.media_type
+            system_metadata.mediaType = media_type
 
         if sys_meta.file_name is not None:
             system_metadata.fileName = sys_meta.file_name
