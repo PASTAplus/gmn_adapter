@@ -89,12 +89,17 @@ def system_metadata_factory(package_id: str, replication_policy: tuple, resource
         algorithm="SHA-1"
     )
 
+    allow_public = AccessRule(
+        subject=["public"],
+        permission=[Permission.READ]
+    )
+
     allow = AccessRule(
         subject=[f"{resource[ResourceMap.PRINCIPAL_OWNER.value]}"],
         permission=[Permission.CHANGE_PERMISSION]
     )
     access_policy = AccessPolicy(
-        allow=[allow]
+        allow=[allow, allow_public]
     )
 
     sys_meta = SysMeta(
