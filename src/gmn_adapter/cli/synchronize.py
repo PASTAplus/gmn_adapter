@@ -83,7 +83,9 @@ def create(package: Package, gmn_client: Client, repair: bool=False, dryrun: boo
                 sys_meta=sys_meta,
                 data=data,
                 pass_through_url=pass_through_url,
-                dryrun=dryrun
+                repair=repair,
+                dryrun=dryrun,
+                verbose=verbose
             )
 
 
@@ -111,7 +113,9 @@ def update(predecessor: Package, package: Package, gmn_client: Client, repair: b
                     sys_meta=sys_meta,
                     data=package.ore,
                     pass_through_url=None,
-                    dryrun=dryrun
+                    repair=repair,
+                    dryrun=dryrun,
+                    verbose=verbose
                 )
             elif resource[ResourceMap.RESOURCE_TYPE] == ResourceType.METADATA:
                 # Use update to build obsolescence chain for METADATA
@@ -121,7 +125,9 @@ def update(predecessor: Package, package: Package, gmn_client: Client, repair: b
                     sys_meta=sys_meta,
                     data=None,
                     pass_through_url=resource[ResourceMap.RESOURCE_ID],
-                    dryrun=dryrun
+                    repair=repair,
+                    dryrun=dryrun,
+                    verbose=verbose
                 )
             else:
                 # REPORT and DATA do not have obsolescence chains
@@ -130,7 +136,9 @@ def update(predecessor: Package, package: Package, gmn_client: Client, repair: b
                     sys_meta=sys_meta,
                     data=None,
                     pass_through_url=resource[ResourceMap.RESOURCE_ID],
-                    dryrun=dryrun
+                    repair=repair,
+                    dryrun=dryrun,
+                    verbose=verbose
                 )
 
 
