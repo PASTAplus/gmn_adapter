@@ -46,8 +46,6 @@ def exists_in_gmn(package: Package, gmn_client: Client, dryrun: bool=False, verb
     Throws:
         GMNAdapterPartialDataPackageExists: If a partial data package exists in GMN.
     """
-    if dryrun: return False
-
     missing_resources = []
     object_count = 0
     for resource in package.resources:
@@ -176,7 +174,7 @@ def synchronize_to_gmn(
         raise GMNAdapterNonSynchronizedAncestor(f"Package {package.pid} has a non-synchronized ancestor")
 
     try:
-        if exists_in_gmn(package=package, gmn_client=gmn_client, dryrun=dryrun):  # re-throws GMNAdapterPartialDataPackageExists
+        if exists_in_gmn(package=package, gmn_client=gmn_client, dryrun=dryrun, verbose=verbose):  # re-throws GMNAdapterPartialDataPackageExists
             raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
     except GMNAdapterPartialDataPackageExists as e:
         if not repair:
