@@ -14,6 +14,7 @@ Created:
 """
 from io import BytesIO
 
+import click
 import daiquiri
 
 import d1_client
@@ -102,7 +103,16 @@ class Client:
             exists = True
         return exists
 
-    def create_object(self, pid: str, sys_meta: SysMeta, data: bytes=None, pass_through_url: str=None, dryrun:bool=False) -> None:
+    def create_object(
+        self,
+        pid: str,
+        sys_meta: SysMeta,
+        data: bytes=None,
+        pass_through_url: str=None,
+        repair:bool=False,
+        dryrun:bool=False,
+        verbose: int=0
+    ) -> None:
         """
         Create a GMN object with the given PID.
 
@@ -111,17 +121,45 @@ class Client:
             sys_meta (SysMeta): The system metadata object.
             data (bytes): The data to create an object with.
             pass_through_url (str, optional): The url to the PASTA data entity. Defaults to None.
+            repair (bool, optional): If True, attempt to repair the object. Defaults to False.
             dryrun (bool, optional): If True, perform a dry run without actually creating the object. Defaults to False.
+            verbose (int, optional): Verbosity level for logging. Defaults to 0.
         """
         if not dryrun:
-            self.client.create(
-                pid=pid,
-                obj=BytesIO(data),
-                sysmeta_pyxb=sys_meta,
-                vendorSpecific=pass_through_url
-            )
+            system_metadata = SysMeta.to_pyxb(sys_meta)
+            if pass_through_url is not None:
+                vendor_specific_header = {'VENDOR-GMN-REMOTE-URL': pass_through_url}
+            else:
+                vendor_specific_header = None
+            try:
+                self.client.create(
+                    pid=pid,
+                    obj=BytesIO(data),
+                    sysmeta_pyxb=system_metadata,
+                    vendorSpecific=vendor_specific_header
+                )
+            except d1_exceptions.IdentifierNotUnique as e:
+                if repair:
+                    msg = f"Attempting to repair data package: Object {pid} already exists, skipping..."
+                    logger.warning(msg)
+                    if verbose > 0:
+                        click.echo(msg)
+                else:
+                    raise e
 
-    def update_object(self, predecessor_pid: str, pid: str, sys_meta: SysMeta, data: bytes=None, pass_through_url: str=None, dryrun:bool=False):
+
+    def update_object(
+        self,
+        predecessor_pid: str,
+        pid: str,
+        sys_meta: SysMeta,
+        data: bytes=None,
+        pass_through_url:
+        str=None,
+        repair:bool=False,
+        dryrun:bool=False,
+        verbose: int=0
+    ):
         """
         Update a GMN object pid with the given new PID.
 
@@ -131,16 +169,32 @@ class Client:
             sys_meta (SysMeta): The system metadata object.
             data (bytes): The data to create an object with.
             pass_through_url (str, optional): The url to the PASTA data entity. Defaults to None.
+            repair (bool, optional): If True, attempt to repair the object. Defaults to False.
             dryrun (bool, optional): If True, perform a dry run without actually creating the object. Defaults to False.
+            verbose (int, optional): Verbosity level for logging. Defaults to 0.
         """
         if not dryrun:
-            self.client.update(
-                pid=predecessor_pid,
-                newPid=pid,
-                obj=BytesIO(data),
-                sysmeta_pyxb=sys_meta,
-                vendorSpecific=pass_through_url
-            )
+            system_metadata = SysMeta.to_pyxb(sys_meta)
+            if pass_through_url is not None:
+                vendor_specific_header = {'VENDOR-GMN-REMOTE-URL': pass_through_url}
+            else:
+                vendor_specific_header = None
+            try:
+                self.client.update(
+                    pid=predecessor_pid,
+                    newPid=pid,
+                    obj=BytesIO(data),
+                    sysmeta_pyxb=system_metadata,
+                    vendorSpecific=vendor_specific_header
+                )
+            except d1_exceptions.IdentifierNotUnique as e:
+                if repair:
+                    msg = f"Attempting to repair data package: Object {pid} already exists, skipping..."
+                    logger.warning(msg)
+                    if verbose > 0:
+                        click.echo(msg)
+                else:
+                    raise e
 
     def delete_object(self, pid: str):
         pass
