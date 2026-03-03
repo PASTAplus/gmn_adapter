@@ -63,7 +63,7 @@ def sync_manager(dryrun: bool, repair: bool, verbose: int) -> int:
     queue_manager.set_all_clean()  # Mark all queued packages as clean for GMN synchronization inspection.
     queue_head = queue_manager.get_head(clean=True)
 
-    while queue_head:
+    while queue_head is not None:
 
         # Allow for controlled exit
         if Config.SYNC_IRQ.exists():
