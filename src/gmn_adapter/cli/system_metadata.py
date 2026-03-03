@@ -89,6 +89,7 @@ def system_metadata_factory(package_id: str, replication_policy: tuple, resource
         algorithm="SHA-1"
     )
 
+    # Required for public access through GMN and CN
     allow_public = AccessRule(
         subject=["public"],
         permission=[Permission.READ]
@@ -99,7 +100,7 @@ def system_metadata_factory(package_id: str, replication_policy: tuple, resource
         permission=[Permission.CHANGE_PERMISSION]
     )
     access_policy = AccessPolicy(
-        allow=[allow, allow_public]
+        allow=[allow_public, allow]
     )
 
     sys_meta = SysMeta(
