@@ -94,8 +94,8 @@ class Config:
     DB_DRIVER = "DB_DRIVER"
 
     # PASTA scope specified for a SQL IN operator list
-    EDI_SCOPE = "('edi', 'cos-spu')"
-    LTER_SCOPE = (
+    EDI_SCOPES = "('edi', 'cos-spu')"
+    LTER_SCOPES = (
         "('ecotrends',"
         "'knb-lter-and',"
         "'knb-lter-arc',"
