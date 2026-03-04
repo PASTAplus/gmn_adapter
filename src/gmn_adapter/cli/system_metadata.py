@@ -104,12 +104,10 @@ def system_metadata_factory(package_id: str, replication_policy: tuple, resource
     )
 
     sys_meta = SysMeta(
-        serial_version=1,
         identifier=resource_id,
         format_id=format_id,
         size=size,
         checksum=checksum,
-        submitter=f"CN={Config.GMN_NODE},DC=dataone,DC=org",
         rights_holder=Config.DEFAULT_RIGHTS_HOLDER,
         origin_member_node=Config.GMN_NODE,
         authoritative_member_node=Config.GMN_NODE,
