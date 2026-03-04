@@ -68,12 +68,12 @@ def sync(ctx, dryrun: bool, pid: str, repair: bool, verbose: int):
         package = Package(pid=pid, pasta_db_engine=pasta_db_engine)
     except GMNAdapterDataPackageNotFound:
         if verbose > 0:
-            click.echo(f"Data package \"{pid}\" was not found on PASTA - skipping.")
-        logger.warning(f"Data package \"{pid}\" was not found on PASTA - skipping..")
+            click.echo(f"Data package \"{pid}\" was not found on PASTA.")
+        logger.warning(f"Data package \"{pid}\" was not found on PASTA.")
     except GMNAdapterPackageIsNotGMNCandidate as e:
         if verbose > 0:
-            click.echo(f"Package {pid} is not a GMN candidate - skipping.")
-        logger.warning(f"Package {pid} is not a GMN candidate - skipping.")
+            click.echo(f"Package {pid} is not a GMN candidate.")
+        logger.warning(f"Package {pid} is not a GMN candidate.")
     else:
         # Ensure all resources are loaded before synchronization
         package.ensure_resources_loaded()
