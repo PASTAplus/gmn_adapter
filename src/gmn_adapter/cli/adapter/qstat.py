@@ -50,7 +50,7 @@ def qstat(ctx, queued: bool, verbose: int):
         click.echo("Queued events:")
         events = queue_manager.get_queued_events()
         for event in events:
-            event_out = f"    {event.package} ({event.datetime}Z"
+            event_out = f"    {event.package} ({event.datetime}Z)"
             click.echo(event_out)
 
     sys.exit(0)
