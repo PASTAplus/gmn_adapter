@@ -33,5 +33,6 @@ def configuration() -> dict:
         "PASTA DB": pasta_db,
         "Adapter DB": Config.QUEUE,
         "IAM Endpoint": Config.AUTH_HOST,
-        "Log directory": str(Config.LOGS_DIR),
+        "Log Directory": str(Config.LOGS_DIR),
+        "Lock Directory": str(Config.LOCK_FILE_DIR)
     }
