@@ -137,15 +137,44 @@ class QueueManager(object):
         self.session.commit()
 
     def get_count(self) -> int:
-        """Return the number of records in the adapter queue.
+        """
+        Return the number of records in the adapter queue.
 
         Returns:
             int: Total count of queued event records.
         """
         return self.session.query(func.count(Queue.package)).scalar()
 
+    def get_dequeued_count(self) -> int:
+        """
+        Return the number of dequeued records in the adapter queue.
+
+        Returns:
+            int: Total count of dequeued event records.
+        """
+        return self.session.query(Queue).filter(Queue.dequeued == True).count()
+
+    def get_queued_count(self) -> int:
+        """
+        Return the number of queued records in the adapter queue.
+
+        Returns:
+            int: Total count of queued event records.
+        """
+        return self.session.query(Queue).filter(Queue.dequeued == False).count()
+
+    def get_queued_events(self) -> list[type[Queue]] | None:
+        """
+        Return a list of all queued event records.
+
+        Returns:
+            list[Queue] | None: List of queued event records, or None if no valid records exist.
+        """
+        return self.session.query(Queue).where(Queue.dequeued == False).order_by(Queue.datetime.asc()).all()
+
     def get_event(self, package: str) -> type[Queue]:
-        """Return the queue event record for a given package identifier.
+        """
+        Return the queue event record for a given package identifier.
 
         Args:
             package: The PASTA data package identifier (e.g., "scope.id.rev").
@@ -163,7 +192,8 @@ class QueueManager(object):
         )
 
     def get_head(self, clean: bool=True) -> type[Queue] | None:
-        """Return the oldest non-dequeued event record.
+        """
+        Return the oldest non-dequeued event record.
 
         Args:
             clean: If True, only return records with dirty=False. Defaults to True.
@@ -190,7 +220,8 @@ class QueueManager(object):
             )
 
     def get_tail(self, clean: bool=True) -> type[Queue] | None:
-        """Return the newest non-dequeued event record.
+        """
+        Return the newest non-dequeued event record.
 
         Args:
             clean: If True, only return records with dirty=False. Defaults to True.
@@ -217,7 +248,8 @@ class QueueManager(object):
             )
 
     def get_newest_event_datetime(self) -> datetime:
-        """Return the datetime of the most recent queued event regardless of dequeued status.
+        """
+        Return the datetime of the most recent queued event regardless of dequeued status.
 
         Returns:
             datetime.datetime: Datetime of the last queue entry, or `None` if empty.
@@ -228,7 +260,8 @@ class QueueManager(object):
                  .datetime)
 
     def get_newest_event(self) -> type[Queue] | None:
-        """Return the most recent queued event regardless of dequeued status.
+        """
+        Return the most recent queued event regardless of dequeued status.
 
         Returns:
             Queue: The most recent queue entry, or `None` if empty.
@@ -238,7 +271,8 @@ class QueueManager(object):
                  .first())
 
     def get_predecessor(self, package: str) -> type[Queue] | None:
-        """Return the most recent predecessor for a given package.
+        """
+        Return the most recent predecessor for a given package.
 
         A predecessor is an event with the same scope and identifier, but a lower
         revision number.
@@ -265,7 +299,8 @@ class QueueManager(object):
         )
 
     def is_dequeued(self, package: str) -> bool:
-        """Return whether the specified package has been dequeued.
+        """
+        Return whether the specified package has been dequeued.
 
         Args:
             package: The PASTA data package identifier (e.g., "scope.id.rev").
@@ -310,7 +345,15 @@ class QueueManager(object):
         self.session.commit()
 
     def has_queued_ancestors(self, package: str) -> bool:
-        """Return whether the specified package has any queued ancestors."""
+        """
+        Return whether the specified package has any queued ancestors.
+
+        Args:
+            package (str): The PASTA data package identifier.
+
+        Returns:
+            bool: True if the package has queued ancestors, False otherwise.
+        """
         scope, _identifier, _revision = package.split(".")
         identifier = int(_identifier)
         revision = int(_revision)

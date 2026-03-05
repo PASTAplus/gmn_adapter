@@ -23,6 +23,7 @@ import daiquiri
 from gmn_adapter.config import Config
 from gmn_adapter.cli.configuration import configuration
 from gmn_adapter.cli.adapter.peekage import peekage
+from gmn_adapter.cli.adapter.qstat import qstat
 from gmn_adapter.cli.adapter.sysmeta import sysmeta
 from gmn_adapter.cli.adapter.sync import sync
 
@@ -83,6 +84,7 @@ def adapter(ctx):
 
 
 adapter.add_command(peekage)
+adapter.add_command(qstat)
 adapter.add_command(sync)
 adapter.add_command(sysmeta)
 

@@ -172,5 +172,24 @@ def test_has_queued_ancestors(queue_manager):
     assert not has_ancestors
 
 
+def test_queued_count(queue_manager):
+    """Test that the queued count is correct."""
+    count = queue_manager.get_queued_count()
+    assert count == 3340
+
+
+def test_dequeued_count(queue_manager):
+    """Test that the dequeued count is correct."""
+    count = queue_manager.get_dequeued_count()
+    assert count == 5
+
+def test_get_queued_events(queue_manager):
+    """Test that the queued events can be retrieved."""
+    events = queue_manager.get_queued_events()
+    for event in events:
+        print(event.package, event.datetime)
+
+    assert len(events) == 3340
+
 
 
