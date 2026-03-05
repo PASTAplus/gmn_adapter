@@ -45,7 +45,7 @@ libiconv==1.18
 liblzma==5.8.2
 libmpdec==4.0.0
 libntlm==1.8
-libpq==18.2
+libpq==18.3
 libsqlite==3.51.2
 libstdcxx==15.2.0
 libuuid==2.41.3
@@ -84,9 +84,10 @@ rdflib==7.6.0
 readline==8.3
 requests==2.32.5
 requests_toolbelt==1.0.0
-ruff==0.15.2
-sqlalchemy==2.0.47
+ruff==0.15.4
+sqlalchemy==2.0.48
 sqlite==3.51.2
+tenacity==9.1.4
 tk==8.6.13
 tomli==2.4.0
 trove-classifiers==2026.1.14.14
@@ -95,6 +96,6 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2025c
 urllib3==2.6.3
-yarl==1.22.0
+yarl==1.23.0
 zipstream==1.1.4
 zstd==1.5.7
