@@ -16,7 +16,6 @@ import sys
 
 import click
 import daiquiri
-from iam_lib.exceptions import IAMResponseError
 
 from gmn_adapter.config import Config
 from gmn_adapter.exceptions import GMNAdapterPackageIsNotGMNCandidate, GMNAdapterDataPackageNotFound
@@ -100,3 +99,4 @@ def peekage(ctx, pid: str, sysmeta: bool, verbose: int):
                 click.echo(f"{resource_id}:")
                 click.echo(f"{peeks['system_metadata'].model_dump_json(indent=4, exclude_none=True)}")
 
+    sys.exit(0)
