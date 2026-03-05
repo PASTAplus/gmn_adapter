@@ -34,5 +34,4 @@ def configuration() -> dict:
         "Adapter DB": Config.QUEUE,
         "IAM Endpoint": Config.AUTH_HOST,
         "Log directory": str(Config.LOGS_DIR),
-        "Lock directory": str(Config.LOCK_FILE_DIR)
     }
