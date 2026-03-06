@@ -90,7 +90,12 @@ def peekage(ctx, pid: str, sysmeta: bool, verbose: int):
         key_width = max(len(key) for key in resources.keys())
         click.echo(f"{'Resource_ID':<{key_width}} | PASTA create datetime (UTC)  | GMN sync datetime (UTC)")
         for resource_id, peeks in resources.items():
-            click.echo(f"{resource_id:<{key_width}} | {peeks['create_date']}Z  | {peeks['sync_date'].isoformat().replace('+00:00', 'Z')}")
+            if peeks["sync_date"] is not None:
+                sync_date_str = peeks["sync_date"].isoformat().replace('+00:00', 'Z')
+            else:
+                # If the resource is not synced yet, set the sync date to "N/A"
+                sync_date_str = "N/A"
+            click.echo(f"{resource_id:<{key_width}} | {peeks['create_date']}Z  | {sync_date_str}")
 
         # Print out resource system metadata
         if sysmeta:
