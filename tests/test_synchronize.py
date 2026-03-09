@@ -33,6 +33,7 @@ def test_synchronize_create(queue_manager, gmn_client, config):
     """Test that a new package is created in GMN."""
     pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     predecessor = Package(PREDECESSOR, pasta_db_engine)
+    predecessor.ensure_resources_loaded()
     synchronize_to_gmn(package=predecessor, queue_manager=queue_manager, gmn_client=gmn_client, pasta_db_engine=pasta_db_engine, dryrun=True)
 
 
@@ -41,6 +42,7 @@ def test_synchronize_update(queue_manager, gmn_client, config):
     queue_manager.dequeue(PREDECESSOR)
     pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     package = Package(PACKAGE, pasta_db_engine)
+    package.ensure_resources_loaded()
     synchronize_to_gmn(package=package, queue_manager=queue_manager, gmn_client=gmn_client, pasta_db_engine=pasta_db_engine, dryrun=True)
 
 
@@ -48,5 +50,6 @@ def test_synchronize_runtime_error(queue_manager, gmn_client, config):
     """Test that a RuntimeError is raised when attempting to synchronize a package that has queued predecessors."""
     pasta_db_engine = get_pasta_db_engine(host=config["db_host"], port=config["db_port"])
     package = Package(DESCENDANT, pasta_db_engine)
+    package.ensure_resources_loaded()
     with pytest.raises(GMNAdapterNonSynchronizedAncestor):
         synchronize_to_gmn(package=package, queue_manager=queue_manager, gmn_client=gmn_client, pasta_db_engine=pasta_db_engine, dryrun=True)
