@@ -174,7 +174,7 @@ def synchronize_to_gmn(
         raise GMNAdapterNonSynchronizedAncestor(f"Package {package.pid} has a non-synchronized ancestor")
 
     try:
-        if exists_in_gmn(package=package, gmn_client=gmn_client, dryrun=dryrun, verbose=verbose):  # re-throws GMNAdapterPartialDataPackageExists
+        if exists_in_gmn(package=package, gmn_client=gmn_client, dryrun=dryrun, verbose=verbose) and not dryrun:  # re-throws GMNAdapterPartialDataPackageExists
             raise GMNAdapterDataPackageExists(f"Package \"{package.pid}\" already exists in \"{Config.GMN_NODE}\" GMN.")
     except GMNAdapterPartialDataPackageExists as e:
         if not repair:
@@ -188,11 +188,9 @@ def synchronize_to_gmn(
         if verbose > 0:
             click.echo(f"Updating packages ({predecessor.pid}, {package.pid})")
         logger.info(f"Updating packages ({predecessor.pid}, {package.pid})")
-        if not dryrun:
-            update(predecessor, package, gmn_client, repair, dryrun, verbose)
+        update(predecessor, package, gmn_client, repair, dryrun, verbose)
     else:
         if verbose > 0:
             click.echo(f"Creating package {package.pid}")
         logger.info(f"Creating package {package.pid}")
-        if not dryrun:
-            create(package, gmn_client, repair, dryrun, verbose)
+        create(package, gmn_client, repair, dryrun, verbose)
