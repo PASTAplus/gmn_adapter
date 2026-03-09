@@ -66,30 +66,36 @@ def exists_in_gmn(package: Package, gmn_client: Client, dryrun: bool=False, verb
 
 def create(package: Package, gmn_client: Client, repair: bool=False, dryrun: bool=False, verbose: int=0) -> None:
     """Create a new data package in GMN."""
-    for resource in package.resources:
-        if resource[ResourceMap.RESOURCE_TYPE] != ResourceType.DATA_PACKAGE:
-            sys_meta = system_metadata_factory(package_id=package.pid, replication_policy=package.replication_policy, resource=resource)
-            if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE:
-                data = package.ore
-                pass_through_url = None
-            else:
-                data = None
-                pass_through_url = resource[ResourceMap.RESOURCE_ID]
 
-            gmn_client.create_object(
-                pid=resource[ResourceMap.RESOURCE_ID],
-                sys_meta=sys_meta,
-                data=data,
-                pass_through_url=pass_through_url,
-                repair=repair,
-                dryrun=dryrun,
-                verbose=verbose
-            )
+    # Force ORE to synchronize last
+    resources = sorted(package.resources, key=lambda r: r[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE)
+    for resource in resources:
+        if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.DATA_PACKAGE:
+            continue
+
+        sys_meta = system_metadata_factory(package_id=package.pid, replication_policy=package.replication_policy, resource=resource)
+        if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE:
+            data = package.ore
+            pass_through_url = None
+        else:
+            data = None
+            pass_through_url = resource[ResourceMap.RESOURCE_ID]
+
+        gmn_client.create_object(
+            pid=resource[ResourceMap.RESOURCE_ID],
+            sys_meta=sys_meta,
+            data=data,
+            pass_through_url=pass_through_url,
+            repair=repair,
+            dryrun=dryrun,
+            verbose=verbose
+        )
 
 
 
 def update(predecessor: Package, package: Package, gmn_client: Client, repair: bool=False, dryrun: bool=False, verbose: int=0) -> None:
     """Update an existing data package in GMN."""
+
     predecessor_ore_pid = predecessor_metadata_pid = None
     for resource in predecessor.resources:
         match resource[ResourceMap.RESOURCE_TYPE]:
@@ -100,44 +106,48 @@ def update(predecessor: Package, package: Package, gmn_client: Client, repair: b
             case _:
                 continue
 
-    for resource in package.resources:
-        if resource[ResourceMap.RESOURCE_TYPE] != ResourceType.DATA_PACKAGE:
-            sys_meta = system_metadata_factory(package_id=package.pid, replication_policy=package.replication_policy, resource=resource)
-            if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE:
-                # Use update to build obsolescence chain for ORE
-                gmn_client.update_object(
-                    predecessor_pid=predecessor_ore_pid,
-                    pid=resource[ResourceMap.RESOURCE_ID],
-                    sys_meta=sys_meta,
-                    data=package.ore,
-                    pass_through_url=None,
-                    repair=repair,
-                    dryrun=dryrun,
-                    verbose=verbose
-                )
-            elif resource[ResourceMap.RESOURCE_TYPE] == ResourceType.METADATA:
-                # Use update to build obsolescence chain for METADATA
-                gmn_client.update_object(
-                    predecessor_pid=predecessor_metadata_pid,
-                    pid=resource[ResourceMap.RESOURCE_ID],
-                    sys_meta=sys_meta,
-                    data=None,
-                    pass_through_url=resource[ResourceMap.RESOURCE_ID],
-                    repair=repair,
-                    dryrun=dryrun,
-                    verbose=verbose
-                )
-            else:
-                # REPORT and DATA do not have obsolescence chains
-                gmn_client.create_object(
-                    pid=resource[ResourceMap.RESOURCE_ID],
-                    sys_meta=sys_meta,
-                    data=None,
-                    pass_through_url=resource[ResourceMap.RESOURCE_ID],
-                    repair=repair,
-                    dryrun=dryrun,
-                    verbose=verbose
-                )
+    # Force ORE to synchronize last
+    resources = sorted(package.resources, key=lambda r: r[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE)
+    for resource in resources:
+        if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.DATA_PACKAGE:
+            continue
+
+        sys_meta = system_metadata_factory(package_id=package.pid, replication_policy=package.replication_policy, resource=resource)
+        if resource[ResourceMap.RESOURCE_TYPE] == ResourceType.ORE:
+            # Use update to build obsolescence chain for ORE
+            gmn_client.update_object(
+                predecessor_pid=predecessor_ore_pid,
+                pid=resource[ResourceMap.RESOURCE_ID],
+                sys_meta=sys_meta,
+                data=package.ore,
+                pass_through_url=None,
+                repair=repair,
+                dryrun=dryrun,
+                verbose=verbose
+            )
+        elif resource[ResourceMap.RESOURCE_TYPE] == ResourceType.METADATA:
+            # Use update to build obsolescence chain for METADATA
+            gmn_client.update_object(
+                predecessor_pid=predecessor_metadata_pid,
+                pid=resource[ResourceMap.RESOURCE_ID],
+                sys_meta=sys_meta,
+                data=None,
+                pass_through_url=resource[ResourceMap.RESOURCE_ID],
+                repair=repair,
+                dryrun=dryrun,
+                verbose=verbose
+            )
+        else:
+            # REPORT and DATA do not have obsolescence chains
+            gmn_client.create_object(
+                pid=resource[ResourceMap.RESOURCE_ID],
+                sys_meta=sys_meta,
+                data=None,
+                pass_through_url=resource[ResourceMap.RESOURCE_ID],
+                repair=repair,
+                dryrun=dryrun,
+                verbose=verbose
+            )
 
 
 def synchronize_to_gmn(
