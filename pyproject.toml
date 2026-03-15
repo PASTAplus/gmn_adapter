@@ -69,7 +69,7 @@ pattern = "(?P<version>\\d+\\.\\d+\\.\\d+)"
 packages = ["src/gmn_adapter"]
 
 [tool.hatch.build.targets.sdist]
-only-include = ["src/gmn_adapter"]
+only-include = ["src/gmn_adapter", "README.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
