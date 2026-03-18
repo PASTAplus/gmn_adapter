@@ -10,7 +10,7 @@ bzip2==1.0.8
 ca-certificates==2026.2.25
 certifi==2026.2.25
 cffi==2.0.0
-charset-normalizer==3.4.5
+charset-normalizer==3.4.6
 click==8.3.1
 colorama==0.4.6
 cryptography==46.0.5
@@ -28,7 +28,7 @@ hatchling==1.29.0
 hpack==4.1.0
 hyperframe==6.1.0
 iam_lib==0.0.22
-icu==78.2
+icu==78.3
 idna==3.11
 iniconfig==2.3.0
 iso8601==2.1.0
@@ -61,13 +61,13 @@ openldap==2.6.10
 openssl==3.6.1
 packaging==26.0
 pathspec==1.0.4
-pip==25.3
+pip==26.0.1
 pixi-pycharm==0.0.10
 pluggy==1.6.0
 propcache==0.4.1
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
-pyasn1==0.6.2
+pyasn1==0.6.3
 pycparser==3.0
 pydantic==2.12.5
 pydantic-core==2.41.5
